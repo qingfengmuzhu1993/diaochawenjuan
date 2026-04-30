@@ -1,6 +1,6 @@
 <template>
-  <div class="layout">
-    <Navbar />
+  <div class="app-layout">
+    <Sidebar />
     <main class="main-content">
       <router-view />
     </main>
@@ -8,10 +8,20 @@
 </template>
 
 <script setup>
-import Navbar from './Navbar.vue'
+import Sidebar from './Sidebar.vue'
 </script>
 
 <style scoped>
-.layout { min-height: 100vh; background: #f5f7fa; }
-.main-content { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #F0FAF5;
+}
+
+.main-content {
+  margin-left: 220px;
+  flex: 1;
+  padding: 24px;
+  min-width: 0;
+}
 </style>

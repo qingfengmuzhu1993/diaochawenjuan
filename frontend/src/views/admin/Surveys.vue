@@ -1,13 +1,13 @@
 <template>
   <div class="admin-surveys">
-    <h2>问卷管理</h2>
+    <h1 class="page-title">问卷管理</h1>
     <el-radio-group v-model="filter" @change="fetchSurveys" style="margin-bottom:16px">
       <el-radio-button value="pending">待审核</el-radio-button>
       <el-radio-button value="">全部</el-radio-button>
       <el-radio-button value="approved">已通过</el-radio-button>
       <el-radio-button value="rejected">已拒绝</el-radio-button>
     </el-radio-group>
-    <el-table :data="surveys" stripe v-loading="loading">
+    <el-table :data="surveys" stripe v-loading="loading" class="styled-table">
       <el-table-column prop="title" label="标题" min-width="180" />
       <el-table-column prop="userId" label="创建者ID" width="100" />
       <el-table-column prop="totalQuestions" label="题目数" width="80" />
@@ -58,3 +58,15 @@ async function handleReject(row) {
 }
 async function handleRemove(row) { await adminApi.removeSurvey(row.id); ElMessage.success('已下架'); fetchSurveys() }
 </script>
+
+<style scoped>
+.styled-table {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.styled-table :deep(.el-table__header th) {
+  background: #E0FAF2;
+  color: #134E4A;
+  font-weight: 600;
+}
+</style>

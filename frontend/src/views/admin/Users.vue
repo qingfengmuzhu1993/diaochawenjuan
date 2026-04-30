@@ -1,7 +1,7 @@
 <template>
   <div class="admin-users">
-    <h2>用户管理</h2>
-    <el-table :data="users" stripe v-loading="loading">
+    <h1 class="page-title">用户管理</h1>
+    <el-table :data="users" stripe v-loading="loading" class="styled-table">
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="username" label="昵称" width="150" />
       <el-table-column prop="phone" label="手机号" width="140" />
@@ -57,3 +57,15 @@ async function handleUnban(row) {
   fetchUsers()
 }
 </script>
+
+<style scoped>
+.styled-table {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.styled-table :deep(.el-table__header th) {
+  background: #E0FAF2;
+  color: #134E4A;
+  font-weight: 600;
+}
+</style>

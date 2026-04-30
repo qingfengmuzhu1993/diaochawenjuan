@@ -1,7 +1,7 @@
 <template>
   <div class="admin-finance">
-    <h2>财务管理</h2>
-    <el-table :data="transactions" stripe v-loading="loading">
+    <h1 class="page-title">财务管理</h1>
+    <el-table :data="transactions" stripe v-loading="loading" class="styled-table">
       <el-table-column prop="transactionNo" label="流水号" width="180" />
       <el-table-column prop="userId" label="用户ID" width="100" />
       <el-table-column prop="type" label="类型" width="100">
@@ -38,3 +38,15 @@ async function fetchTransactions() {
   try { const res = await adminApi.getTransactions({ page: page.value, size: 20 }); transactions.value = res.list; total.value = res.total } catch {} finally { loading.value = false }
 }
 </script>
+
+<style scoped>
+.styled-table {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.styled-table :deep(.el-table__header th) {
+  background: #E0FAF2;
+  color: #134E4A;
+  font-weight: 600;
+}
+</style>

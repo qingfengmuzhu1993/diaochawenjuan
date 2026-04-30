@@ -1,6 +1,6 @@
 <template>
   <div class="create-survey">
-    <h2>创建问卷</h2>
+    <h1 class="page-title">创建问卷</h1>
     <el-tabs v-model="mode">
       <el-tab-pane label="手动创建" name="manual">
         <SurveyEditor ref="editorRef" :initial="surveyData" />
@@ -109,4 +109,7 @@ fetchTemplates()
 
 <style scoped>
 .actions { margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end; }
+.create-survey {
+  max-width: 900px;
+}
 </style>

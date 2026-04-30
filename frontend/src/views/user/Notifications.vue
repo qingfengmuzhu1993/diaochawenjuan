@@ -1,8 +1,8 @@
 <template>
   <div class="notifications">
-    <div class="header">
-      <h2>通知</h2>
-      <el-button @click="handleMarkAllRead">全部已读</el-button>
+    <div class="page-header">
+      <h1 class="page-title">通知</h1>
+      <el-button round @click="handleMarkAllRead">全部已读</el-button>
     </div>
     <div v-for="n in list" :key="n.id" class="notif-item" :class="{ unread: !n.isRead }" @click="handleRead(n)">
       <el-tag :type="tagType(n.type)" size="small">{{ n.type }}</el-tag>
@@ -40,8 +40,26 @@ async function handleMarkAllRead() {
 </script>
 
 <style scoped>
-.header { display: flex; justify-content: space-between; align-items: center; }
+.page-header { display: flex; justify-content: space-between; align-items: center; }
 .notif-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
 .notif-item.unread { background: #f0f9ff; font-weight: bold; }
 .time { color: #999; font-size: 12px; margin-left: auto; }
+
+.notif-item {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  border: 1px solid #E8F5EF;
+  transition: all 0.2s;
+}
+
+.notif-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.notif-item.unread {
+  background: #E0FAF2;
+  border-color: #B5F3E2;
+}
 </style>

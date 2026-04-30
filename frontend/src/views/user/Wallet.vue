@@ -1,13 +1,19 @@
 <template>
   <div class="wallet">
-    <h2>我的钱包</h2>
-    <el-row :gutter="16">
-      <el-col :span="6"><el-statistic title="可用余额" :value="wallet.balance" prefix="¥" :precision="2" /></el-col>
-      <el-col :span="6"><el-statistic title="冻结金额" :value="wallet.frozenBalance" prefix="¥" :precision="2" /></el-col>
-    </el-row>
+    <h1 class="page-title">我的钱包</h1>
+    <div class="stat-row">
+      <div class="stat-card">
+        <span class="stat-label">可用余额</span>
+        <span class="stat-value">¥{{ wallet.balance?.toFixed(2) || '0.00' }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">冻结金额</span>
+        <span class="stat-value frozen">¥{{ wallet.frozenBalance?.toFixed(2) || '0.00' }}</span>
+      </div>
+    </div>
     <div class="actions" style="margin:20px 0">
-      <el-button type="primary" @click="showRecharge=true">充值</el-button>
-      <el-button @click="showWithdraw=true">提现</el-button>
+      <el-button type="primary" round @click="showRecharge=true">充值</el-button>
+      <el-button round @click="showWithdraw=true">提现</el-button>
     </div>
     <h3>交易记录</h3>
     <el-table :data="bills" stripe>
@@ -61,3 +67,37 @@ async function handleWithdraw() {
   try { await userApi.withdraw(withdrawAmount.value); showWithdraw.value = false; ElMessage.success('提现申请已提交'); onMounted() } catch {}
 }
 </script>
+
+<style scoped>
+.stat-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #E8F5EF;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #87A697;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2DD4A8;
+}
+
+.stat-value.frozen {
+  color: #87A697;
+}
+</style>

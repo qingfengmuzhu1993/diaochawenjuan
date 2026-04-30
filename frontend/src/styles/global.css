@@ -1,0 +1,79 @@
+/* frontend/src/styles/global.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #134E4A;
+  background: #F0FAF5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 页面标题 */
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #134E4A;
+  margin-bottom: 20px;
+}
+
+/* 卡片通用样式 */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+/* 统计卡片行 */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* 页面头部操作栏 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* 筛选标签组 */
+.filter-pills {
+  display: inline-flex;
+  gap: 4px;
+  background: #E0FAF2;
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.filter-pill {
+  padding: 6px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #5F8B7A;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+}
+
+.filter-pill.active {
+  background: #FFFFFF;
+  color: #0D9488;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* 操作按钮行 */
+.action-bar {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}

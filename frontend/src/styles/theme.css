@@ -1,0 +1,23 @@
+/* frontend/src/styles/theme.css */
+:root {
+  /* 主题色 - 薄荷绿 */
+  --el-color-primary: #2DD4A8;
+  --el-color-primary-light-3: #5FE3BF;
+  --el-color-primary-light-5: #8AEBD2;
+  --el-color-primary-light-7: #B5F3E2;
+  --el-color-primary-light-8: #CCF7EB;
+  --el-color-primary-light-9: #E0FAF2;
+  --el-color-primary-dark-2: #14B8A6;
+
+  --el-color-success: #2DD4A8;
+  --el-color-warning: #F59E0B;
+  --el-color-danger: #EF4444;
+
+  /* 圆角 */
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 8px;
+  --el-border-radius-round: 20px;
+
+  /* 字体 */
+  --el-font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}

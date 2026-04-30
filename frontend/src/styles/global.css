@@ -6,9 +6,9 @@
 }
 
 body {
-  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  color: #134E4A;
-  background: #F0FAF5;
+  font-family: var(--el-font-family);
+  color: var(--app-text-primary);
+  background: var(--app-bg-page);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -16,7 +16,7 @@ body {
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #134E4A;
+  color: var(--app-text-primary);
   margin-bottom: 20px;
 }
 
@@ -47,7 +47,7 @@ body {
 .filter-pills {
   display: inline-flex;
   gap: 4px;
-  background: #E0FAF2;
+  background: var(--app-bg-hover);
   padding: 4px;
   border-radius: 12px;
 }
@@ -57,7 +57,7 @@ body {
   border-radius: 10px;
   font-size: 13px;
   font-weight: 500;
-  color: #5F8B7A;
+  color: var(--app-text-secondary);
   cursor: pointer;
   transition: all 0.2s;
   border: none;
@@ -66,7 +66,7 @@ body {
 
 .filter-pill.active {
   background: #FFFFFF;
-  color: #0D9488;
+  color: var(--app-text-accent);
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 

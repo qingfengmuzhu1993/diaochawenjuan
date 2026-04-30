@@ -9,9 +9,19 @@
   --el-color-primary-light-9: #E0FAF2;
   --el-color-primary-dark-2: #14B8A6;
 
-  --el-color-success: #2DD4A8;
+  --el-color-success: #14B8A6;
   --el-color-warning: #F59E0B;
   --el-color-danger: #EF4444;
+
+  /* 应用级颜色变量 */
+  --app-text-primary: #134E4A;
+  --app-text-secondary: #5F8B7A;
+  --app-text-muted: #87A697;
+  --app-text-accent: #0D9488;
+  --app-bg-page: #F0FAF5;
+  --app-bg-card: #FFFFFF;
+  --app-bg-hover: #E0FAF2;
+  --app-border: #D4EDE4;
 
   /* 圆角 */
   --el-border-radius-base: 10px;

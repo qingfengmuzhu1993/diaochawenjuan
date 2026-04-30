@@ -65,7 +65,7 @@ body {
 }
 
 .filter-pill.active {
-  background: #FFFFFF;
+  background: var(--app-bg-card);
   color: var(--app-text-accent);
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }

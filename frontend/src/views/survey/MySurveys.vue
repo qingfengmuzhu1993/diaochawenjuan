@@ -1,0 +1,92 @@
+<template>
+  <div class="my-surveys">
+    <div class="header">
+      <h2>我的问卷</h2>
+      <el-button type="primary" @click="$router.push('/surveys/create')">
+        <el-icon><Plus /></el-icon>创建问卷
+      </el-button>
+    </div>
+    <el-tabs v-model="activeTab" @tab-change="fetchSurveys">
+      <el-tab-pane label="全部" name="" />
+      <el-tab-pane label="草稿" name="draft" />
+      <el-tab-pane label="发布中" name="published" />
+      <el-tab-pane label="已结束" name="closed" />
+    </el-tabs>
+    <el-table :data="surveys" v-loading="loading" stripe>
+      <el-table-column prop="title" label="标题" min-width="200">
+        <template #default="{ row }">
+          <el-link type="primary" @click="$router.push('/surveys/' + row.id)">{{ row.title }}</el-link>
+        </template>
+      </el-table-column>
+      <el-table-column prop="status" label="状态" width="100">
+        <template #default="{ row }">
+          <el-tag v-if="row.status==='draft'">草稿</el-tag>
+          <el-tag v-else-if="row.status==='published'" type="success">发布中</el-tag>
+          <el-tag v-else-if="row.status==='closed'" type="info">已结束</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="totalResponses" label="回收" width="80" />
+      <el-table-column prop="totalQuestions" label="题目" width="80" />
+      <el-table-column prop="rewardPerResponse" label="奖励/份" width="100" />
+      <el-table-column prop="createdAt" label="创建时间" width="170" />
+      <el-table-column label="操作" width="220" fixed="right">
+        <template #default="{ row }">
+          <el-button v-if="row.status==='draft'" size="small" @click="$router.push('/surveys/'+row.id+'/edit')">编辑</el-button>
+          <el-button v-if="row.status==='draft'" size="small" type="success" @click="handlePublish(row)">发布</el-button>
+          <el-button v-if="row.status==='published'" size="small" type="primary" @click="$router.push('/analytics/'+row.id)">分析</el-button>
+          <el-button v-if="row.status==='published'" size="small" type="warning" @click="handleClose(row)">关闭</el-button>
+          <el-button v-if="row.status!=='archived'" size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-pagination v-model:current-page="page" :page-size="20" :total="total" layout="prev, pager, next" @current-change="fetchSurveys" style="margin-top:20px;justify-content:center" />
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { surveyApi } from '@/api/survey'
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+const loading = ref(false)
+const surveys = ref([])
+const activeTab = ref('')
+const page = ref(1)
+const total = ref(0)
+
+onMounted(() => fetchSurveys())
+
+async function fetchSurveys() {
+  loading.value = true
+  try {
+    const res = await surveyApi.getMySurveys({ status: activeTab.value, page: page.value, size: 20 })
+    surveys.value = res.list
+    total.value = res.total
+  } catch {} finally { loading.value = false }
+}
+
+async function handlePublish(row) {
+  await ElMessageBox.prompt('请输入每份奖励金额', '发布问卷', { inputType: 'number', inputValue: '0' })
+  await surveyApi.publish(row.id, { dispatchType: 'public', rewardTotalBudget: 0 })
+  ElMessage.success('发布成功')
+  fetchSurveys()
+}
+
+async function handleClose(row) {
+  await ElMessageBox.confirm('确定关闭该问卷？', '提示', { type: 'warning' })
+  await surveyApi.close(row.id)
+  ElMessage.success('已关闭')
+  fetchSurveys()
+}
+
+async function handleDelete(row) {
+  await ElMessageBox.confirm('确定删除该问卷？', '提示', { type: 'warning' })
+  await surveyApi.delete(row.id)
+  ElMessage.success('已删除')
+  fetchSurveys()
+}
+</script>
+
+<style scoped>
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+</style>

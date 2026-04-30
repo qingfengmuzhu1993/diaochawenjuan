@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.smartsurvey.common.exception.BusinessException;
 import com.smartsurvey.common.exception.ErrorCode;
 import com.smartsurvey.common.utils.JwtUtils;
-import com.smartsurvey.common.utils.RedisUtils;
 import com.smartsurvey.module.user.dto.*;
 import com.smartsurvey.module.user.entity.User;
 import com.smartsurvey.module.user.mapper.UserMapper;
@@ -16,32 +15,38 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
-    private static final String SMS_PREFIX = "sms:";
-    private static final long SMS_TTL_SECONDS = 300;
-    private static final long SMS_RATE_LIMIT_SECONDS = 60;
+    private static final Map<String, CodeEntry> smsStore = new ConcurrentHashMap<>();
+    private static final long SMS_TTL_MS = 300_000;
+    private static final long SMS_RATE_LIMIT_MS = 60_000;
+
+    private static class CodeEntry {
+        final String code;
+        final long createdAt;
+        CodeEntry(String code) { this.code = code; this.createdAt = System.currentTimeMillis(); }
+        boolean isExpired() { return System.currentTimeMillis() - createdAt > SMS_TTL_MS; }
+    }
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
-    private final RedisUtils redisUtils;
 
-    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder,
-                       JwtUtils jwtUtils, RedisUtils redisUtils) {
+    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtils jwtUtils) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
-        this.redisUtils = redisUtils;
     }
 
     @Transactional
     public LoginResponse register(RegisterRequest req) {
-        String cachedCode = redisUtils.get(SMS_PREFIX + req.getPhone());
-        if (cachedCode == null || !cachedCode.equals(req.getSmsCode())) {
+        CodeEntry entry = smsStore.get(req.getPhone());
+        if (entry == null || entry.isExpired() || !entry.code.equals(req.getSmsCode())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR.getCode(), "验证码错误或已过期");
         }
 
@@ -65,7 +70,7 @@ public class AuthService {
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.insert(user);
 
-        redisUtils.del(SMS_PREFIX + req.getPhone());
+        smsStore.remove(req.getPhone());
 
         String accessToken = jwtUtils.createToken(user.getId(), user.getRole());
         String refreshToken = jwtUtils.createRefreshToken(user.getId());
@@ -98,15 +103,15 @@ public class AuthService {
     }
 
     public void sendSmsCode(String phone) {
-        // Rate limit check
-        String rateKey = SMS_PREFIX + "rate:" + phone;
-        if (redisUtils.exists(rateKey)) {
-            throw new BusinessException(ErrorCode.SMS_LIMIT);
+        CodeEntry existing = smsStore.get(phone);
+        if (existing != null && !existing.isExpired()) {
+            long elapsed = System.currentTimeMillis() - existing.createdAt;
+            if (elapsed < SMS_RATE_LIMIT_MS) {
+                throw new BusinessException(ErrorCode.SMS_LIMIT);
+            }
         }
-        // Generate 6-digit code
         String code = RandomUtil.randomNumbers(6);
-        redisUtils.setex(SMS_PREFIX + phone, SMS_TTL_SECONDS, code);
-        redisUtils.setex(rateKey, SMS_RATE_LIMIT_SECONDS, "1");
+        smsStore.put(phone, new CodeEntry(code));
         log.info("SMS code for {}: {}", phone, code);
     }
 

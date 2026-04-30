@@ -11,6 +11,7 @@ import com.smartsurvey.module.survey.service.SurveyLogicService;
 import com.smartsurvey.module.survey.service.SurveyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,7 @@ public class AntiCheatService {
     public AntiCheatService(ResponseMapper responseMapper, AnswerMapper answerMapper,
                              QuestionMapper questionMapper, SurveyMapper surveyMapper,
                              SurveyLogicService surveyLogicService, SurveyService surveyService,
-                             ResponseService responseService, RewardService rewardService) {
+                             @Lazy ResponseService responseService, RewardService rewardService) {
         this.responseMapper = responseMapper;
         this.answerMapper = answerMapper;
         this.questionMapper = questionMapper;

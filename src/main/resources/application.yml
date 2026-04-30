@@ -33,7 +33,7 @@ knife4j:
   enable: true
 
 jwt:
-  secret: CHANGE_ME_IN_PRODUCTION_USE_256BIT_KEY_BASE64_ENCODED
+  secret: c21hcnRzdXJ2ZXktand0LWRldi1rZXktMjAyNiFAIyQl
   expiration: 7200000
   refresh-expiration: 604800000
 

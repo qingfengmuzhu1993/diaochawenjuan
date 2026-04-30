@@ -1,18 +1,17 @@
 <template>
   <div class="my-surveys">
-    <div class="header">
-      <h2>我的问卷</h2>
-      <el-button type="primary" @click="$router.push('/surveys/create')">
+    <div class="page-header">
+      <h1 class="page-title">我的问卷</h1>
+      <el-button type="primary" round @click="$router.push('/surveys/create')">
         <el-icon><Plus /></el-icon>创建问卷
       </el-button>
     </div>
-    <el-tabs v-model="activeTab" @tab-change="fetchSurveys">
-      <el-tab-pane label="全部" name="" />
-      <el-tab-pane label="草稿" name="draft" />
-      <el-tab-pane label="发布中" name="published" />
-      <el-tab-pane label="已结束" name="closed" />
-    </el-tabs>
-    <el-table :data="surveys" v-loading="loading" stripe>
+    <div class="filter-pills" style="margin-bottom:20px">
+      <button v-for="tab in tabs" :key="tab.value"
+        class="filter-pill" :class="{ active: activeTab === tab.value }"
+        @click="activeTab = tab.value; fetchSurveys()">{{ tab.label }}</button>
+    </div>
+    <el-table :data="surveys" v-loading="loading" stripe class="styled-table">
       <el-table-column prop="title" label="标题" min-width="200">
         <template #default="{ row }">
           <el-link type="primary" @click="$router.push('/surveys/' + row.id)">{{ row.title }}</el-link>
@@ -20,9 +19,9 @@
       </el-table-column>
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
-          <el-tag v-if="row.status==='draft'">草稿</el-tag>
-          <el-tag v-else-if="row.status==='published'" type="success">发布中</el-tag>
-          <el-tag v-else-if="row.status==='closed'" type="info">已结束</el-tag>
+          <el-tag v-if="row.status==='draft'" round>草稿</el-tag>
+          <el-tag v-else-if="row.status==='published'" type="success" round>发布中</el-tag>
+          <el-tag v-else-if="row.status==='closed'" type="info" round>已结束</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="totalResponses" label="回收" width="80" />
@@ -31,11 +30,11 @@
       <el-table-column prop="createdAt" label="创建时间" width="170" />
       <el-table-column label="操作" width="220" fixed="right">
         <template #default="{ row }">
-          <el-button v-if="row.status==='draft'" size="small" @click="$router.push('/surveys/'+row.id+'/edit')">编辑</el-button>
-          <el-button v-if="row.status==='draft'" size="small" type="success" @click="handlePublish(row)">发布</el-button>
-          <el-button v-if="row.status==='published'" size="small" type="primary" @click="$router.push('/analytics/'+row.id)">分析</el-button>
-          <el-button v-if="row.status==='published'" size="small" type="warning" @click="handleClose(row)">关闭</el-button>
-          <el-button v-if="row.status!=='archived'" size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+          <el-button v-if="row.status==='draft'" size="small" round @click="$router.push('/surveys/'+row.id+'/edit')">编辑</el-button>
+          <el-button v-if="row.status==='draft'" size="small" type="success" round @click="handlePublish(row)">发布</el-button>
+          <el-button v-if="row.status==='published'" size="small" type="primary" round @click="$router.push('/analytics/'+row.id)">分析</el-button>
+          <el-button v-if="row.status==='published'" size="small" type="warning" round @click="handleClose(row)">关闭</el-button>
+          <el-button v-if="row.status!=='archived'" size="small" type="danger" round @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -53,6 +52,12 @@ const surveys = ref([])
 const activeTab = ref('')
 const page = ref(1)
 const total = ref(0)
+const tabs = [
+  { label: '全部', value: '' },
+  { label: '草稿', value: 'draft' },
+  { label: '发布中', value: 'published' },
+  { label: '已结束', value: 'closed' },
+]
 
 onMounted(() => fetchSurveys())
 
@@ -88,5 +93,14 @@ async function handleDelete(row) {
 </script>
 
 <style scoped>
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.styled-table {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.styled-table :deep(.el-table__header th) {
+  background: #E0FAF2;
+  color: #134E4A;
+  font-weight: 600;
+}
 </style>

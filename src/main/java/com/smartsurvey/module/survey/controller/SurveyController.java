@@ -52,7 +52,7 @@ public class SurveyController {
         if (detail.getTotalQuestions() == null || detail.getTotalQuestions() < 3) {
             return ApiResponse.fail(40000, "题目数量不足，至少需要3题");
         }
-        surveyService.changeStatus(userId, id, "published");
+        surveyService.publish(userId, id, req);
         return ApiResponse.ok();
     }
 

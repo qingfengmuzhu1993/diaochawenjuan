@@ -142,6 +142,21 @@ public class SurveyService {
     }
 
     @Transactional
+    public void publish(Long userId, Long surveyId, PublishRequest req) {
+        Survey survey = surveyMapper.selectById(surveyId);
+        if (survey == null) throw new BusinessException(ErrorCode.SURVEY_NOT_FOUND);
+        if (!survey.getUserId().equals(userId)) throw new BusinessException(ErrorCode.FORBIDDEN);
+        survey.setStatus("published");
+        survey.setAuditStatus("approved");
+        survey.setDispatchType(req.getDispatchType());
+        if (req.getRewardTotalBudget() != null) {
+            survey.setRewardTotalBudget(req.getRewardTotalBudget());
+        }
+        survey.setUpdatedAt(LocalDateTime.now());
+        surveyMapper.updateById(survey);
+    }
+
+    @Transactional
     public void incrementRemainingQuota(Long surveyId) {
         surveyMapper.decrementQuota(surveyId);
         // For now, just update directly

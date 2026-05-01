@@ -10,19 +10,19 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(account, password) {
     const res = await authApi.login({ account, password })
-    token.value = res.data.accessToken
-    user.value = res.data.userInfo
+    token.value = res.accessToken
+    user.value = res.userInfo
     localStorage.setItem('token', token.value)
-    localStorage.setItem('refreshToken', res.data.refreshToken)
+    localStorage.setItem('refreshToken', res.refreshToken)
     localStorage.setItem('user', JSON.stringify(user.value))
   }
 
   async function register(data) {
     const res = await authApi.register(data)
-    token.value = res.data.accessToken
-    user.value = res.data.userInfo
+    token.value = res.accessToken
+    user.value = res.userInfo
     localStorage.setItem('token', token.value)
-    localStorage.setItem('refreshToken', res.data.refreshToken)
+    localStorage.setItem('refreshToken', res.refreshToken)
     localStorage.setItem('user', JSON.stringify(user.value))
   }
 

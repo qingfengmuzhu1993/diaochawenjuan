@@ -22,7 +22,7 @@ logging:
     com.smartsurvey: DEBUG
 
 ai:
-  provider: deepseek
+  provider: deepseek    # 改成 openai / qwen / zhipu
   deepseek:
     api-key: sk-placeholder
     base-url: https://api.deepseek.com

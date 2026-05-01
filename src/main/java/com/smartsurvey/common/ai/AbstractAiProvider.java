@@ -131,7 +131,7 @@ public abstract class AbstractAiProvider implements AiProvider {
             .getJSONObject("message")
             .getStr("content");
 
-        if (content == null || content.isBlank()) {
+        if (content == null || content.trim().isEmpty()) {
             throw new RuntimeException("AI returned empty content");
         }
 

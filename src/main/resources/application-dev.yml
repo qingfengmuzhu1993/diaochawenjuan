@@ -24,7 +24,7 @@ logging:
 ai:
   provider: deepseek    # 改成 openai / qwen / zhipu
   deepseek:
-    api-key: sk-placeholder
+    api-key: sk-2c8aee0330c24574814e04b79118c595
     base-url: https://api.deepseek.com
     model: deepseek-chat
   openai:

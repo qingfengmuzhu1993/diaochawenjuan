@@ -3,6 +3,7 @@ package com.smartsurvey.common.config;
 import com.smartsurvey.common.filter.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -31,6 +32,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .authorizeRequests()
             .antMatchers("/api/v1/auth/**", "/doc.html", "/swagger-resources/**",
                          "/webjars/**", "/v2/api-docs/**").permitAll()
+            .antMatchers(HttpMethod.GET,
+                         "/api/v1/templates/**",
+                         "/api/v1/marketplace/surveys",
+                         "/api/v1/marketplace/recommended",
+                         "/api/v1/leaderboard",
+                         "/api/v1/surveys/{id}").permitAll()
             .antMatchers("/api/v1/admin/**").hasRole("ADMIN")
             .anyRequest().authenticated()
             .and()

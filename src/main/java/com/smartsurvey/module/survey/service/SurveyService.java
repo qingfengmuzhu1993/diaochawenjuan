@@ -146,11 +146,22 @@ public class SurveyService {
         Survey survey = surveyMapper.selectById(surveyId);
         if (survey == null) throw new BusinessException(ErrorCode.SURVEY_NOT_FOUND);
         if (!survey.getUserId().equals(userId)) throw new BusinessException(ErrorCode.FORBIDDEN);
+
+        if (req.getTargetQuota() == null || req.getTargetQuota() <= 0) {
+            if (survey.getTargetQuota() == null || survey.getTargetQuota() <= 0) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST.getCode(), "请设置目标回收份数");
+            }
+            req.setTargetQuota(survey.getTargetQuota());
+        }
+
         survey.setStatus("published");
         survey.setAuditStatus("approved");
-        survey.setDispatchType(req.getDispatchType());
-        if (req.getRewardTotalBudget() != null) {
-            survey.setRewardTotalBudget(req.getRewardTotalBudget());
+        survey.setDispatchType(req.getDispatchType() != null ? req.getDispatchType() : "public");
+        survey.setTargetQuota(req.getTargetQuota());
+        survey.setRemainingQuota(req.getTargetQuota());
+        survey.setRewardTotalBudget(req.getRewardTotalBudget());
+        if (req.getEndTime() != null) {
+            survey.setEndTime(req.getEndTime());
         }
         survey.setUpdatedAt(LocalDateTime.now());
         surveyMapper.updateById(survey);

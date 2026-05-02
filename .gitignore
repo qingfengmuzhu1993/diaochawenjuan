@@ -1,0 +1,8 @@
+target/
+.idea/
+.superpowers/
+.worktrees/
+docs/
+node_modules/
+dist/
+需求.md

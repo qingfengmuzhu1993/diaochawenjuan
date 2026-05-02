@@ -113,6 +113,18 @@ public class MarketplaceService {
             throw new BusinessException(ErrorCode.QUOTA_FULL);
         }
 
+        Response existing = responseMapper.selectOne(new LambdaQueryWrapper<Response>()
+            .eq(Response::getSurveyId, surveyId).eq(Response::getUserId, userId));
+        if (existing != null) {
+            if ("in_progress".equals(existing.getStatus())) {
+                ClaimResponse resp = new ClaimResponse();
+                resp.setResponseId(existing.getId());
+                resp.setExpireAt(LocalDateTime.now().plusMinutes(15));
+                return resp;
+            }
+            throw new BusinessException(ErrorCode.DUPLICATE_SUBMIT);
+        }
+
         Response response = new Response();
         response.setSurveyId(surveyId);
         response.setUserId(userId);

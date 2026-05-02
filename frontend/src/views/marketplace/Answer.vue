@@ -266,10 +266,14 @@ async function handleSubmit() {
   saveCurrentAnswer()
   submitting.value = true
   try {
-    const startRes = await responseApi.start({ surveyId: route.params.id, channel: 'marketplace' })
+    let respId = route.query.responseId
+    if (!respId) {
+      const startRes = await responseApi.start({ surveyId: route.params.id, channel: 'marketplace' })
+      respId = startRes.responseId
+    }
     const ansList = Object.values(answers.value)
-    await responseApi.submitAnswers(startRes.responseId, { answers: ansList })
-    await responseApi.submit(startRes.responseId)
+    await responseApi.submitAnswers(respId, { answers: ansList })
+    await responseApi.submit(respId)
     submitted.value = true
     shareSurveyId.value = route.params.id
   } catch {} finally { submitting.value = false }

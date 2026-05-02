@@ -70,10 +70,11 @@ public class GamificationService {
 
         // Calculate streak from previous day
         LocalDate yesterday = today.minusDays(1);
-        Integer prevStreak = jdbcTemplate.queryForObject(
+        List<Integer> prevResults = jdbcTemplate.queryForList(
             "SELECT streak_days FROM sign_in_records WHERE user_id = ? AND sign_date = ?",
             Integer.class, userId, yesterday.toString());
-        int streak = (prevStreak != null ? prevStreak : 0) + 1;
+        int prevStreak = prevResults.isEmpty() ? 0 : prevResults.get(0);
+        int streak = prevStreak + 1;
 
         int points = streak >= 7 ? 20 : 5;
 

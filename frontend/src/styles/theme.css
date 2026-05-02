@@ -1,33 +1,55 @@
-/* frontend/src/styles/theme.css */
-:root {
-  /* 主题色 - 薄荷绿 */
-  --el-color-primary: #2DD4A8;
-  --el-color-primary-light-3: #5FE3BF;
-  --el-color-primary-light-5: #8AEBD2;
-  --el-color-primary-light-7: #B5F3E2;
-  --el-color-primary-light-8: #CCF7EB;
-  --el-color-primary-light-9: #E0FAF2;
-  --el-color-primary-dark-2: #14B8A6;
+/* SmartSurvey Theme */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-  --el-color-success: #14B8A6;
+:root {
+  /* Element Plus primary - teal green */
+  --el-color-primary: #0D9488;
+  --el-color-primary-light-3: #3DB5A5;
+  --el-color-primary-light-5: #5FCDC0;
+  --el-color-primary-light-7: #8ADFD5;
+  --el-color-primary-light-8: #B0EBE5;
+  --el-color-primary-light-9: #E0FAF2;
+  --el-color-primary-dark-2: #0F766E;
+
+  --el-color-success: #0D9488;
   --el-color-warning: #F59E0B;
   --el-color-danger: #EF4444;
+  --el-color-info: #5F8B7A;
 
-  /* 应用级颜色变量 */
-  --app-text-primary: #134E4A;
-  --app-text-secondary: #5F8B7A;
-  --app-text-muted: #87A697;
-  --app-text-accent: #0D9488;
-  --app-bg-page: #F0FAF5;
+  /* App colors */
+  --app-primary: #0D9488;
+  --app-primary-dark: #0F766E;
+  --app-primary-light: #14B8A6;
+  --app-primary-bg: #F0FDFA;
+  --app-bg: #F5F9F7;
   --app-bg-card: #FFFFFF;
   --app-bg-hover: #E0FAF2;
   --app-border: #D4EDE4;
+  --app-border-light: #E8F5EF;
+  --app-text-primary: #0F2928;
+  --app-text-secondary: #5F8B7A;
+  --app-text-muted: #87A697;
+  --app-text-accent: #0D9488;
 
-  /* 圆角 */
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(15,41,40,0.06);
+  --shadow-md: 0 4px 16px rgba(15,41,40,0.08);
+  --shadow-lg: 0 8px 32px rgba(15,41,40,0.10);
+  --shadow-card: 0 2px 12px rgba(15,41,40,0.04);
+
+  /* Radius */
   --el-border-radius-base: 10px;
   --el-border-radius-small: 8px;
   --el-border-radius-round: 20px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
 
-  /* 字体 */
-  --el-font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4,0,0.2,1);
+  --transition-normal: 0.25s cubic-bezier(0.4,0,0.2,1);
+
+  /* Fonts */
+  --el-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
 }

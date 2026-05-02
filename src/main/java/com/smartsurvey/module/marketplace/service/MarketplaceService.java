@@ -87,6 +87,7 @@ public class MarketplaceService {
             card.setTotalResponses(s.getTotalResponses() != null ? s.getTotalResponses() : 0);
             User creator = userMapper.selectById(s.getUserId());
             card.setCreatorName(creator != null ? creator.getUsername() : "匿名用户");
+            card.setCreatorId(s.getUserId());
             list.add(card);
         }
         return new PageResult<>(query.getPage(), query.getSize(), result.getTotal(), list);

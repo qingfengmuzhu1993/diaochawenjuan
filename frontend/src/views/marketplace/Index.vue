@@ -67,7 +67,10 @@
         <div class="card-footer">
           <div class="creator">
             <el-avatar :size="24" />
-            <span>@{{ item.creatorName || '匿名用户' }}</span>
+            <router-link :to="'/profile/' + item.creatorId" class="creator-name" @click.stop>@{{ item.creatorName || '匿名用户' }}</router-link>
+            <el-button v-if="item.creatorId && item.creatorId !== authUserId"
+              link size="small" type="primary"
+              @click.stop="toggleCardFollow(item.creatorId)">{{ cardFollowed[item.creatorId] ? '已关注' : '+ 关注' }}</el-button>
           </div>
           <el-button type="primary" size="small" round @click.stop="handleClaim(item)">立即回答</el-button>
         </div>
@@ -111,6 +114,8 @@ import { ref, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { marketplaceApi } from '@/api/marketplace'
+import { userApi } from '@/api/user'
+import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 
 const sortOptions = [
@@ -126,7 +131,10 @@ const periods = [
 ]
 
 const router = useRouter()
+const auth = useAuthStore()
+const authUserId = auth.user?.id
 const list = ref([])
+const cardFollowed = ref({})
 const sort = ref('recommended')
 const page = ref(1)
 const total = ref(0)
@@ -164,6 +172,18 @@ async function handleClaim(item) {
   try {
     const res = await marketplaceApi.claim(item.id)
     router.push('/marketplace/' + item.id + '/answer?responseId=' + res.responseId)
+  } catch {}
+}
+
+async function toggleCardFollow(userId) {
+  try {
+    if (cardFollowed.value[userId]) {
+      await userApi.unfollow(userId)
+      cardFollowed.value[userId] = false
+    } else {
+      await userApi.follow(userId)
+      cardFollowed.value[userId] = true
+    }
   } catch {}
 }
 
@@ -308,6 +328,8 @@ async function fetchLeaderboard() {
   font-size: 12px;
   color: #87A697;
 }
+.creator-name { color: #5F8B7A; text-decoration: none; font-weight: 500; }
+.creator-name:hover { color: #0D9488; text-decoration: underline; }
 
 .board-item {
   display: flex;

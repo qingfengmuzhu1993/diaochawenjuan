@@ -27,7 +27,10 @@
       </div>
 
       <div class="creator-info" v-if="survey.userId">
-        <span>创建者：用户 #{{ survey.userId }}</span>
+        <span>创建者：<router-link :to="'/profile/' + survey.userId" class="creator-link">用户 #{{ survey.userId }}</router-link></span>
+        <el-button v-if="survey.userId && !isSelf" link size="small" type="primary" @click="toggleFollow">
+          {{ following ? '已关注' : '+ 关注' }}
+        </el-button>
         <span v-if="survey.startTime">开始：{{ formatDate(survey.startTime) }}</span>
         <span v-if="survey.endTime">截止：{{ formatDate(survey.endTime) }}</span>
       </div>
@@ -64,12 +67,17 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { surveyApi } from '@/api/survey'
 import { marketplaceApi } from '@/api/marketplace'
+import { userApi } from '@/api/user'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 const loading = ref(true)
 const claiming = ref(false)
 const survey = ref({})
+const following = ref(false)
+const isSelf = computed(() => survey.value.userId === auth.user?.id)
 
 const canClaim = computed(() => (survey.value.remainingQuota || 0) > 0)
 const previewQuestions = computed(() => (survey.value.questions || []).slice(0, 2))
@@ -81,8 +89,24 @@ const estimatedTime = computed(() => {
 onMounted(async () => {
   try {
     survey.value = await surveyApi.getDetail(route.params.id)
+    if (survey.value.userId && !isSelf.value) {
+      following.value = await userApi.isFollowing(survey.value.userId)
+    }
   } catch {} finally { loading.value = false }
 })
+
+async function toggleFollow() {
+  if (!survey.value.userId) return
+  try {
+    if (following.value) {
+      await userApi.unfollow(survey.value.userId)
+      following.value = false
+    } else {
+      await userApi.follow(survey.value.userId)
+      following.value = true
+    }
+  } catch {}
+}
 
 function typeLabel(type) {
   const map = { single: '单选', multiple: '多选', judge: '判断', fill: '填空', essay: '简答', rating: '评分', matrix: '矩阵', ranking: '排序' }
@@ -118,7 +142,9 @@ async function handleClaim() {
 .stat-item { text-align: center; padding: 12px; background: #F5FAF8; border-radius: 10px; }
 .stat-label { display: block; font-size: 12px; color: #87A697; margin-bottom: 4px; }
 .stat-value { font-size: 16px; font-weight: 700; color: #134E4A; }
-.creator-info { display: flex; gap: 20px; font-size: 13px; color: #87A697; flex-wrap: wrap; }
+.creator-info { display: flex; gap: 20px; font-size: 13px; color: #87A697; flex-wrap: wrap; align-items: center; }
+.creator-link { color: #0D9488; text-decoration: none; font-weight: 500; }
+.creator-link:hover { text-decoration: underline; }
 .preview-section { margin-bottom: 24px; }
 .preview-section h3 { color: #134E4A; font-size: 16px; margin-bottom: 12px; }
 .preview-question { background: #FAFBFC; border-radius: 12px; padding: 16px; margin-bottom: 10px; border: 1px solid #E8F5EF; }

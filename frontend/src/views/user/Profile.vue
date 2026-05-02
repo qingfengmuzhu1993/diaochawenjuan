@@ -6,7 +6,12 @@
         <el-avatar :size="80" :src="profile.avatarUrl" />
         <div class="profile-info">
           <h2>{{ profile.username }}</h2>
-          <p>{{ profile.bio || '这个人很懒，什么都没写...' }}</p>
+          <p class="bio-line">
+            {{ profile.bio || '这个人很懒，什么都没写...' }}
+            <el-button v-if="isSelf" link type="primary" size="small" @click="openBioDialog">
+              <el-icon><Edit /></el-icon>编辑
+            </el-button>
+          </p>
           <div class="profile-tags">
             <el-tag v-if="profile.level" round>Lv.{{ profile.level }}</el-tag>
             <el-tag type="success" round>信誉 {{ profile.reputation }}</el-tag>
@@ -23,10 +28,14 @@
       <el-col :span="8"><el-statistic title="粉丝" :value="followers.length" /></el-col>
       <el-col :span="8"><el-statistic title="关注" :value="following.length" /></el-col>
     </el-row>
-    <div v-if="isSelf" style="margin-top:16px">
-      <el-input v-model="editBio" placeholder="编辑个人简介" maxlength="200" />
-      <el-button type="primary" size="small" @click="handleUpdate" style="margin-top:8px">保存</el-button>
-    </div>
+    <el-dialog v-model="bioDialogVisible" title="编辑个人简介" width="450px" destroy-on-close>
+      <el-input v-model="editBio" type="textarea" :rows="4" placeholder="介绍一下自己..." maxlength="200" show-word-limit />
+      <template #footer>
+        <el-button @click="bioDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleUpdate">保存</el-button>
+      </template>
+    </el-dialog>
+
     <div class="badge-section" v-if="badges.length > 0">
       <h3>勋章墙</h3>
       <div class="badge-grid">
@@ -75,6 +84,7 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { userApi } from '@/api/user'
 import { ElMessage } from 'element-plus'
+import { Edit } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -83,6 +93,7 @@ const followers = ref([])
 const following = ref([])
 const isFollowed = ref(false)
 const editBio = ref('')
+const bioDialogVisible = ref(false)
 const loading = ref(false)
 const badges = ref([])
 const pointsBalance = ref(0)
@@ -134,8 +145,17 @@ async function handleFollow() {
 async function handleUnfollow() {
   try { await userApi.unfollow(route.params.id); isFollowed.value = false; ElMessage.success('已取消关注') } catch {}
 }
+function openBioDialog() {
+  editBio.value = profile.value.bio || ''
+  bioDialogVisible.value = true
+}
 async function handleUpdate() {
-  try { await userApi.updateProfile({ bio: editBio.value }); ElMessage.success('更新成功') } catch {}
+  try {
+    await userApi.updateProfile({ bio: editBio.value })
+    profile.value.bio = editBio.value
+    ElMessage.success('更新成功')
+    bioDialogVisible.value = false
+  } catch {}
 }
 </script>
 
@@ -169,6 +189,7 @@ async function handleUpdate() {
   margin: 0 0 12px;
 }
 
+.bio-line { display: flex; align-items: center; gap: 8px; }
 .profile-tags {
   display: flex;
   gap: 8px;

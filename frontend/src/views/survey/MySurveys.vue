@@ -25,7 +25,7 @@
 
     <el-table :data="surveys" v-loading="loading" stripe class="styled-table" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="45" />
-      <el-table-column prop="title" label="标题" min-width="220">
+      <el-table-column prop="title" label="标题" min-width="220" show-overflow-tooltip>
         <template #default="{ row }">
           <div class="title-cell">
             <el-link type="primary" @click="$router.push('/surveys/' + row.id)">{{ row.title }}</el-link>
@@ -42,8 +42,8 @@
           <el-tag v-else-if="row.status==='closed'" effect="plain" round type="info">已结束</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="totalQuestions" label="题目" width="70" align="center" />
-      <el-table-column prop="rewardPerResponse" label="奖励/份" width="100" align="right">
+      <el-table-column prop="totalQuestions" label="题目" width="80" align="center" />
+      <el-table-column prop="rewardPerResponse" label="奖励/份" width="110" align="right">
         <template #default="{ row }">
           <span v-if="row.rewardPerResponse > 0" class="reward-cell">¥{{ row.rewardPerResponse }}</span>
           <span v-else style="color:var(--app-text-muted)">未设置</span>

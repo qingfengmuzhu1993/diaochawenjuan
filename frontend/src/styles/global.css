@@ -75,6 +75,7 @@ a:hover { color: var(--app-primary-dark); }
   padding: 15px 14px !important;
   font-size: 14px;
   color: var(--app-text-secondary);
+  white-space: nowrap;
 }
 .styled-table .el-table__row:hover > td { background: #F9FCFA !important; }
 

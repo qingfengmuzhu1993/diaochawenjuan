@@ -29,7 +29,7 @@
           <span v-else class="none-cell">-</span>
         </template>
       </el-table-column>
-      <el-table-column prop="quality_score" label="质量评分" width="100" align="center">
+      <el-table-column prop="quality_score" label="质量评分" width="110" align="center">
         <template #default="{ row }">
           <span v-if="row.quality_score" class="score-cell" :class="scoreClass(row.quality_score)">{{ row.quality_score }}</span>
           <span v-else class="none-cell">-</span>

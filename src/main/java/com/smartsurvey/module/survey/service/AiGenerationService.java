@@ -58,7 +58,7 @@ public class AiGenerationService {
                 for (int i = 0; i < questionsJson.size(); i++) {
                     JSONObject qj = questionsJson.getJSONObject(i);
                     CreateSurveyRequest.QuestionItem qi = new CreateSurveyRequest.QuestionItem();
-                    qi.setType(qj.getStr("type", "single"));
+                    qi.setType(mapAiType(qj.getStr("type", "single")));
                     qi.setContent(qj.getStr("content"));
                     qi.setRequired(qj.getInt("required", 1));
                     qi.setOrderIndex(i);
@@ -166,6 +166,21 @@ public class AiGenerationService {
         }
         json = json.trim();
         return JSONUtil.parseObj(json);
+    }
+
+    private String mapAiType(String aiType) {
+        if (aiType == null) return "single";
+        switch (aiType.toLowerCase()) {
+            case "single_choice": return "single";
+            case "multiple_choice": return "multiple";
+            case "rating": case "scale": return "rating";
+            case "essay": case "open_ended": case "text": return "essay";
+            case "fill": case "short_text": return "fill";
+            case "judge": case "yes_no": case "boolean": return "judge";
+            case "matrix": return "matrix";
+            case "ranking": case "sort": return "ranking";
+            default: return "single";
+        }
     }
 
     private List<String> generateSuggestions(JSONObject result,

@@ -64,7 +64,15 @@ public abstract class AbstractAiProvider implements AiProvider {
 
     private String buildSurveySystemPrompt() {
         return "你是一个专业的问卷调研专家。请严格按照要求生成调查问卷，并以严格的JSON格式返回。\n\n" +
-               "题目类型可选：single_choice(单选), multiple_choice(多选), rating(量表1-5), essay(开放题)\n\n" +
+               "题目类型可选（必须使用以下英文标识）：\n" +
+               "single(单选题) - 2-6个互斥选项\n" +
+               "multiple(多选题) - 2-6个选项，最少选1个\n" +
+               "judge(判断题) - 是/否二选一\n" +
+               "fill(填空题) - 短文本输入\n" +
+               "essay(简答题) - 长文本回答\n" +
+               "rating(评分题) - 1-5分量表\n" +
+               "matrix(矩阵题) - 多行×多列评分\n" +
+               "ranking(排序题) - 选项优先级排序\n\n" +
                "要求：\n" +
                "1. 题目类型多样化\n" +
                "2. 每道题有2-6个选项\n" +
@@ -83,7 +91,7 @@ public abstract class AbstractAiProvider implements AiProvider {
             "  \"description\": \"问卷说明（1-2句话）\",\n" +
             "  \"questions\": [\n" +
             "    {\n" +
-            "      \"type\": \"single_choice\",\n" +
+            "      \"type\": \"single\",\n" +
             "      \"content\": \"题目内容\",\n" +
             "      \"required\": 1,\n" +
             "      \"options\": [{\"id\":1,\"text\":\"选项A\"},{\"id\":2,\"text\":\"选项B\"}]\n" +

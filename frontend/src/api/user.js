@@ -20,4 +20,10 @@ export const userApi = {
   getBadges() {
     return request.get('/users/badges')
   },
+  getPoints() {
+    return request.get('/points')
+  },
+  exchangePoints(type) {
+    return request.post('/points/exchange', { type })
+  },
 }

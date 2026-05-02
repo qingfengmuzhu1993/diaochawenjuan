@@ -40,3 +40,14 @@ INSERT IGNORE INTO badges (name, description, icon, condition_type, condition_va
 ('签到达人', '连续签到30天', 'calendar', 'consecutive_signin', 30),
 ('金牌答手', '累计收益超过1000元', 'coin', 'total_earnings', 1000),
 ('首批用户', '平台上线首月注册', 'rocket', 'early_user', 1);
+
+CREATE TABLE IF NOT EXISTS points_usage (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    exchange_type VARCHAR(30) NOT NULL,
+    points_spent INT NOT NULL,
+    reward VARCHAR(100),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_type (user_id, exchange_type),
+    INDEX idx_user_created (user_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='积分使用记录';

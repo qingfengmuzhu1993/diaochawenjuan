@@ -39,6 +39,33 @@
         </div>
       </div>
     </div>
+    <div v-if="isSelf" class="points-section">
+      <h3>积分中心</h3>
+      <div class="points-balance">
+        <span class="points-num">{{ pointsBalance }}</span>
+        <span class="points-label">当前积分</span>
+      </div>
+      <div class="exchange-options">
+        <div class="exchange-card">
+          <div class="exchange-info">
+            <div class="exchange-title">优先抢单权</div>
+            <div class="exchange-desc">兑换后可优先抢到高奖励问卷</div>
+          </div>
+          <el-button type="primary" size="small" round @click="handleExchange('priority')" :loading="exchanging">
+            100积分 兑换
+          </el-button>
+        </div>
+        <div class="exchange-card">
+          <div class="exchange-info">
+            <div class="exchange-title">1元现金券</div>
+            <div class="exchange-desc">直接抵扣提现手续费（月限5次）</div>
+          </div>
+          <el-button type="warning" size="small" round @click="handleExchange('cash_coupon')" :loading="exchanging">
+            500积分 兑换
+          </el-button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -58,10 +85,28 @@ const isFollowed = ref(false)
 const editBio = ref('')
 const loading = ref(false)
 const badges = ref([])
+const pointsBalance = ref(0)
+const exchanging = ref(false)
 const isSelf = computed(() => !route.params.id || route.params.id == auth.user?.id)
 
 async function fetchBadges() {
   try { badges.value = await userApi.getBadges() } catch {}
+}
+
+async function fetchPoints() {
+  try {
+    const res = await userApi.getPoints()
+    pointsBalance.value = res.balance || 0
+  } catch {}
+}
+
+async function handleExchange(type) {
+  exchanging.value = true
+  try {
+    const res = await userApi.exchangePoints(type)
+    ElMessage.success('兑换成功：' + res.reward)
+    pointsBalance.value = parseInt(res.remaining)
+  } catch {} finally { exchanging.value = false }
 }
 
 function badgeIcon(icon) {
@@ -79,6 +124,7 @@ onMounted(async () => {
     following.value = await userApi.getFollowing(uid)
     if (!isSelf.value) isFollowed.value = await userApi.isFollowing(uid)
     await fetchBadges()
+    await fetchPoints()
   } catch {} finally { loading.value = false }
 })
 
@@ -135,4 +181,13 @@ async function handleUpdate() {
 .badge-icon { font-size: 24px; flex-shrink: 0; }
 .badge-name { font-size: 13px; font-weight: 600; color: #134E4A; }
 .badge-desc { font-size: 11px; color: #87A697; margin-top: 2px; }
+.points-section { margin-top: 28px; }
+.points-section h3 { color: #134E4A; font-size: 16px; margin-bottom: 12px; }
+.points-balance { display: flex; align-items: baseline; gap: 8px; margin-bottom: 16px; padding: 16px; background: linear-gradient(135deg, #0D9488, #134E4A); border-radius: 12px; }
+.points-num { font-size: 32px; font-weight: 700; color: #fff; }
+.points-label { font-size: 14px; color: rgba(255,255,255,0.8); }
+.exchange-options { display: flex; gap: 12px; }
+.exchange-card { flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #F5FAF8; border-radius: 12px; border: 1px solid #E8F5EF; }
+.exchange-title { font-size: 14px; font-weight: 600; color: #134E4A; }
+.exchange-desc { font-size: 12px; color: #87A697; margin-top: 4px; }
 </style>

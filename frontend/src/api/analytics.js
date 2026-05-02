@@ -9,4 +9,5 @@ export const analyticsApi = {
     })
   },
   exportCsv: (surveyId) => '/api/v1/analytics/surveys/' + surveyId + '/export/csv',
+  generateReport: (surveyId) => request.post('/analytics/surveys/' + surveyId + '/report'),
 }

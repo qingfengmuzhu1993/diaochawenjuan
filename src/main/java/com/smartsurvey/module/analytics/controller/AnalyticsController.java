@@ -38,4 +38,9 @@ public class AnalyticsController {
             @RequestParam Long colQuestionId) {
         return ApiResponse.ok(statisticsService.crossTabulation(surveyId, rowQuestionId, colQuestionId));
     }
+
+    @PostMapping("/surveys/{surveyId}/report")
+    public ApiResponse<Map<String, Object>> generateReport(@PathVariable Long surveyId) {
+        return ApiResponse.ok(aiAnalysisService.generateReport(surveyId));
+    }
 }

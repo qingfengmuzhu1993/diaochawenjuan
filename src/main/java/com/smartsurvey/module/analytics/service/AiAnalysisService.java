@@ -5,28 +5,40 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.smartsurvey.common.ai.AiProvider;
+import com.smartsurvey.module.analytics.service.StatisticsService;
 import com.smartsurvey.module.response.entity.Answer;
 import com.smartsurvey.module.response.entity.Response;
 import com.smartsurvey.module.response.mapper.AnswerMapper;
 import com.smartsurvey.module.response.mapper.ResponseMapper;
 import com.smartsurvey.module.survey.entity.Question;
+import com.smartsurvey.module.survey.entity.Survey;
 import com.smartsurvey.module.survey.mapper.QuestionMapper;
+import com.smartsurvey.module.survey.mapper.SurveyMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
 public class AiAnalysisService {
+    private static final Logger log = LoggerFactory.getLogger(AiAnalysisService.class);
     private final ResponseMapper responseMapper;
     private final AnswerMapper answerMapper;
     private final QuestionMapper questionMapper;
     private final AiProvider aiProvider;
+    private final StatisticsService statisticsService;
+    private final SurveyMapper surveyMapper;
 
     public AiAnalysisService(ResponseMapper responseMapper, AnswerMapper answerMapper,
-                             QuestionMapper questionMapper, AiProvider aiProvider) {
+                             QuestionMapper questionMapper, AiProvider aiProvider,
+                             StatisticsService statisticsService, SurveyMapper surveyMapper) {
         this.responseMapper = responseMapper;
         this.answerMapper = answerMapper;
         this.questionMapper = questionMapper;
         this.aiProvider = aiProvider;
+        this.statisticsService = statisticsService;
+        this.surveyMapper = surveyMapper;
     }
 
     public Map<String, Object> getKeyFindings(Long surveyId) {
@@ -167,5 +179,67 @@ public class AiAnalysisService {
 
     private String truncate(String s, int len) {
         return s != null && s.length() > len ? s.substring(0, len) + "..." : s;
+    }
+
+    public Map<String, Object> generateReport(Long surveyId) {
+        Map<String, Object> statistics = statisticsService.getStatistics(surveyId);
+        Map<String, Object> findings = getKeyFindings(surveyId);
+        Survey survey = surveyMapper.selectById(surveyId);
+
+        try {
+            String systemPrompt = "你是一个专业的调研报告撰写专家。请根据提供的统计数据生成一份专业的调研分析报告。返回严格JSON格式。";
+            String userPrompt = String.format(
+                "问卷标题：%s\n样本量：%s\n统计数据：%s\n关键发现：%s\n\n" +
+                "请生成一份结构化的调研报告，包含以下章节：\n" +
+                "1. 调研概况（样本量、完成率）\n" +
+                "2. 核心发现（3-5条最重要的结论）\n" +
+                "3. 逐题分析（每道题的数据解读）\n" +
+                "4. 行动建议（基于数据的具体建议）\n\n" +
+                "返回JSON格式：{\"summary\":\"概况描述\",\"sections\":[{\"title\":\"章节标题\",\"content\":\"章节内容\"},...]}",
+                survey != null ? survey.getTitle() : "问卷", statistics.get("totalResponses"),
+                JSONUtil.toJsonStr(statistics), JSONUtil.toJsonStr(findings));
+
+            String response = aiProvider.analyze(systemPrompt, userPrompt);
+            JSONObject parsed = JSONUtil.parseObj(cleanJson(response));
+
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("surveyTitle", survey != null ? survey.getTitle() : "");
+            result.put("sampleSize", statistics.get("totalResponses"));
+            result.put("generatedAt", LocalDateTime.now().toString());
+            result.put("sections", parsed.get("sections"));
+            result.put("summary", parsed.getStr("summary", ""));
+            return result;
+        } catch (Exception e) {
+            log.error("AI report generation failed for survey {}", surveyId, e);
+            return buildFallbackReport(survey, statistics);
+        }
+    }
+
+    private Map<String, Object> buildFallbackReport(Survey survey, Map<String, Object> statistics) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("surveyTitle", survey != null ? survey.getTitle() : "");
+        result.put("sampleSize", statistics.get("totalResponses"));
+        result.put("generatedAt", LocalDateTime.now().toString());
+        result.put("summary", "共回收" + statistics.get("totalResponses") + "份有效问卷。");
+
+        List<Map<String, String>> sections = new ArrayList<>();
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> qaList = (List<Map<String, Object>>) statistics.get("questionAnalysis");
+        if (qaList != null) {
+            for (Map<String, Object> qa : qaList) {
+                Map<String, String> section = new LinkedHashMap<>();
+                section.put("title", (String) qa.getOrDefault("content", ""));
+                if (qa.get("distribution") != null) {
+                    section.put("content", "选项分布：" + qa.get("distribution").toString());
+                } else if (qa.get("avgRating") != null) {
+                    section.put("content", "平均评分：" + qa.get("avgRating").toString());
+                } else {
+                    section.put("content", "共" + qa.getOrDefault("responseCount", 0) + "条回复");
+                }
+                sections.add(section);
+            }
+        }
+        result.put("sections", sections);
+        return result;
     }
 }

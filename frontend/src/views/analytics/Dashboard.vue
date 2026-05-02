@@ -84,6 +84,22 @@
         </div>
         <el-empty v-else description="选择两个题目开始交叉分析" />
       </el-tab-pane>
+      <el-tab-pane label="智能报告" name="report">
+        <div v-if="!reportData" style="text-align:center;padding:40px">
+          <el-button type="primary" size="large" @click="generateReport" :loading="reportLoading">
+            生成智能报告
+          </el-button>
+        </div>
+        <div v-else class="report-content">
+          <h2 style="color:#134E4A;font-size:20px">{{ reportData.surveyTitle }} — 调研报告</h2>
+          <p style="color:#999;font-size:13px">样本量：{{ reportData.sampleSize }} | 生成时间：{{ formatDt(reportData.generatedAt) }}</p>
+          <el-alert :title="reportData.summary" type="success" :closable="false" style="margin-bottom:16px" />
+          <div v-for="(sec, i) in reportData.sections" :key="i" style="margin-bottom:16px;padding:14px;background:#FAFBFC;border-radius:10px;border:1px solid #E8F5EF">
+            <h4 style="color:#0D9488;margin:0 0 6px">{{ sec.title }}</h4>
+            <p style="color:#5F8B7A;margin:0;line-height:1.8;font-size:14px">{{ sec.content }}</p>
+          </div>
+        </div>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -105,6 +121,8 @@ const activeTab = ref('questions')
 const crossRowQ = ref(null)
 const crossColQ = ref(null)
 const crossData = ref(null)
+const reportData = ref(null)
+const reportLoading = ref(false)
 
 const crossQuestions = computed(() => {
   const qa = stats.value.questionAnalysis || []
@@ -146,6 +164,18 @@ function percentage(count, dist) {
 
 function exportCsv() {
   window.open(analyticsApi.exportCsv(route.params.id))
+}
+
+function formatDt(dt) {
+  if (!dt) return ''
+  return dt.substring(0, 16).replace('T', ' ')
+}
+
+async function generateReport() {
+  reportLoading.value = true
+  try {
+    reportData.value = await analyticsApi.generateReport(route.params.id)
+  } catch {} finally { reportLoading.value = false }
 }
 </script>
 

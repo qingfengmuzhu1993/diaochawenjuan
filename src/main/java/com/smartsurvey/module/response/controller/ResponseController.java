@@ -40,6 +40,12 @@ public class ResponseController {
         return ApiResponse.ok();
     }
 
+    @GetMapping("/{id}")
+    public ApiResponse<Map<String, Object>> getResponseDetail(
+            @CurrentUser Long userId, @PathVariable Long id) {
+        return ApiResponse.ok(responseService.getResponseDetail(userId, id));
+    }
+
     @GetMapping("/my")
     public ApiResponse<List<Map<String, Object>>> getMyResponses(
             @CurrentUser Long userId,

@@ -4,4 +4,5 @@ export const responseApi = {
   submitAnswers: (id, data) => request.post('/responses/' + id + '/answers', data),
   submit: (id) => request.post('/responses/' + id + '/submit'),
   getMyResponses: (page, size) => request.get('/responses/my', { params: { page: page || 1, size: size || 20 } }),
+  getDetail: (id) => request.get('/responses/' + id),
 }

@@ -4,7 +4,7 @@
     <el-table :data="list" v-loading="loading" style="width:100%;margin-top:16px" stripe>
       <el-table-column prop="survey_title" label="问卷标题" min-width="200">
         <template #default="{ row }">
-          <router-link :to="'/marketplace/' + row.survey_id" class="survey-link">{{ row.survey_title }}</router-link>
+          <router-link :to="'/my-answer/' + row.id" class="survey-link">{{ row.survey_title }}</router-link>
         </template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="120">

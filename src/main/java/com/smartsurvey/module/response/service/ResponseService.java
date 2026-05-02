@@ -178,6 +178,50 @@ public class ResponseService {
         }
     }
 
+    public Map<String, Object> getResponseDetail(Long userId, Long responseId) {
+        Response response = responseMapper.selectById(responseId);
+        if (response == null || !response.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        Survey survey = surveyMapper.selectById(response.getSurveyId());
+        List<Question> questions = questionMapper.selectBySurveyId(response.getSurveyId());
+        if (questions != null) {
+            questions.sort(Comparator.comparingInt(Question::getOrderIndex));
+        }
+        List<Answer> answers = answerMapper.selectByResponseId(responseId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", response.getId());
+        result.put("status", response.getStatus());
+        result.put("rewardAmount", response.getRewardAmount());
+        result.put("qualityScore", response.getQualityScore());
+        result.put("createdAt", response.getCreatedAt());
+        result.put("surveyTitle", survey != null ? survey.getTitle() : "已删除的问卷");
+
+        List<Map<String, Object>> qaList = new ArrayList<>();
+        if (questions != null) {
+            for (Question q : questions) {
+                Map<String, Object> qa = new LinkedHashMap<>();
+                qa.put("questionId", q.getId());
+                qa.put("content", q.getContent());
+                qa.put("type", q.getType());
+                qa.put("required", q.getRequired());
+                qa.put("options", q.getOptions());
+
+                Answer match = answers.stream()
+                    .filter(a -> a.getQuestionId().equals(q.getId())).findFirst().orElse(null);
+                if (match != null) {
+                    qa.put("answerText", match.getAnswerText());
+                    qa.put("answerOptions", match.getAnswerOptions());
+                    qa.put("answerRating", match.getAnswerRating());
+                }
+                qaList.add(qa);
+            }
+        }
+        result.put("questions", qaList);
+        return result;
+    }
+
     public List<Map<String, Object>> getMyResponses(Long userId, int page, int size) {
         int offset = (page - 1) * size;
         String sql = "SELECT r.id, r.survey_id, s.title AS survey_title, r.status, " +

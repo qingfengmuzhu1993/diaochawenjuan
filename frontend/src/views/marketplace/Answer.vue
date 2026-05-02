@@ -3,9 +3,19 @@
     <h2>{{ survey.title }}</h2>
     <p class="desc">{{ survey.description }}</p>
     <el-progress :percentage="progress" :stroke-width="8" style="margin:16px 0" />
+    <div v-if="timeLeft > 0" class="countdown-timer" :class="{ warning: timeLeft < 300 }">
+      <el-icon><Clock /></el-icon>
+      <span>{{ Math.floor(timeLeft/60) }}:{{ String(timeLeft%60).padStart(2,'0') }}</span>
+    </div>
     <el-alert v-if="timedOut" title="答题时间已超时" type="error" show-icon :closable="false" />
 
-    <div class="question-area" v-if="currentQuestion">
+    <div class="display-toggle" v-if="totalQuestions > 0">
+      <el-switch v-model="conversationalMode" active-text="对话模式" inactive-text="标准模式" size="small" />
+    </div>
+
+    <div :class="conversationalMode ? 'conv-layout' : 'std-layout'">
+      <transition :name="conversationalMode ? 'fade-slide' : ''" mode="out-in">
+    <div :key="conversationalMode ? currentIndex : 'std'" class="question-area" v-if="currentQuestion">
       <el-card>
         <template #header>
           <span>{{ currentIndex + 1 }}. {{ currentQuestion.content }}</span>
@@ -83,6 +93,15 @@
         </div>
       </el-card>
     </div>
+      </transition>
+      <div v-if="conversationalMode && totalQuestions > 1" class="conv-dots">
+        <span v-for="(q, i) in questions" :key="i"
+          class="conv-dot"
+          :class="{ active: i === currentIndex, done: i < currentIndex }"
+          @click="goToQuestion(i)"
+        />
+      </div>
+    </div>
 
     <div class="nav-buttons">
       <el-button v-if="currentIndex > 0" @click="prevQuestion">上一题</el-button>
@@ -113,7 +132,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { responseApi } from '@/api/response'
 import { surveyApi } from '@/api/survey'
 import { ElMessage } from 'element-plus'
-import { Rank } from '@element-plus/icons-vue'
+import { Rank, Clock } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -128,6 +147,10 @@ const submitted = ref(false)
 const shareUrl = ref('')
 const shareSurveyId = ref(null)
 const timedOut = ref(false)
+const timeLeft = ref(0)
+let timerInterval = null
+const conversationalMode = ref(false)
+let questionStartTime = 0
 const matrixAnswers = ref({})
 const rankingItems = ref([])
 let rankDragIdx = -1
@@ -161,7 +184,32 @@ onMounted(async () => {
     const detail = await surveyApi.getDetail(route.params.id)
     survey.value = detail
     questions.value = detail.questions || []
+
+    const draftKey = 'answer_draft_' + route.params.id
+    const draft = localStorage.getItem(draftKey)
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft)
+        if (Date.now() - parsed.savedAt < 24 * 3600 * 1000) {
+          answers.value = parsed.answers || {}
+          currentIndex.value = parsed.currentIndex || 0
+          loadCurrentAnswer()
+        }
+      } catch {}
+    }
+
+    if (survey.value.timeLimitMinutes && survey.value.timeLimitMinutes > 0) {
+      timeLeft.value = survey.value.timeLimitMinutes * 60
+      timerInterval = setInterval(() => {
+        timeLeft.value--
+        if (timeLeft.value <= 0) {
+          clearInterval(timerInterval)
+          handleSubmit()
+        }
+      }, 1000)
+    }
   } catch {} finally { loading.value = false }
+  questionStartTime = Date.now()
 })
 
 function saveCurrentAnswer() {
@@ -189,6 +237,11 @@ function saveCurrentAnswer() {
       answerRating: currentAnswer.value.rating || null,
     }
   }
+  localStorage.setItem('answer_draft_' + route.params.id, JSON.stringify({
+    answers: answers.value,
+    currentIndex: currentIndex.value,
+    savedAt: Date.now()
+  }))
 }
 
 function loadCurrentAnswer() {
@@ -262,6 +315,13 @@ function prevQuestion() {
   loadCurrentAnswer()
 }
 
+function goToQuestion(idx) {
+  saveCurrentAnswer()
+  currentIndex.value = idx
+  loadCurrentAnswer()
+  questionStartTime = Date.now()
+}
+
 async function handleSubmit() {
   saveCurrentAnswer()
   submitting.value = true
@@ -275,6 +335,7 @@ async function handleSubmit() {
     await responseApi.submitAnswers(respId, { answers: ansList })
     await responseApi.submit(respId)
     submitted.value = true
+    localStorage.removeItem('answer_draft_' + route.params.id)
     shareSurveyId.value = route.params.id
   } catch {} finally { submitting.value = false }
 }
@@ -313,4 +374,18 @@ async function copyShareUrl() {
 .submit-success { margin-top: 32px; }
 .share-box { margin-top: 16px; padding: 16px; background: #F5FAF8; border-radius: 12px; }
 .share-box p { font-size: 13px; color: #5F8B7A; margin: 0 0 10px; }
+.countdown-timer { display: flex; align-items: center; gap: 6px; font-size: 15px; color: #0D9488; font-weight: 600; margin-bottom: 12px; }
+.countdown-timer.warning { color: #F56C6C; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+.display-toggle { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.conv-layout { max-width: 500px; margin: 0 auto; }
+.std-layout { max-width: 700px; margin: 0 auto; }
+.fade-slide-enter-active { transition: all 0.3s ease-out; }
+.fade-slide-leave-active { transition: all 0.2s ease-in; }
+.fade-slide-enter-from { opacity: 0; transform: translateY(20px); }
+.fade-slide-leave-to { opacity: 0; transform: translateY(-10px); }
+.conv-dots { display: flex; justify-content: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+.conv-dot { width: 10px; height: 10px; border-radius: 50%; background: #CCE4D6; cursor: pointer; transition: all 0.2s; }
+.conv-dot.active { background: #0D9488; transform: scale(1.3); }
+.conv-dot.done { background: #5F8B7A; }
 </style>

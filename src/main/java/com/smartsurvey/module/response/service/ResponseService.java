@@ -70,6 +70,20 @@ public class ResponseService {
         response.setUserId(userId);
         response.setStatus("in_progress");
         response.setChannel(req.getChannel() != null ? req.getChannel() : "direct");
+
+        // track referrer from share link
+        if (req.getReferrerCode() != null && !req.getReferrerCode().isEmpty()) {
+            try {
+                String[] parts = req.getReferrerCode().split("_");
+                if (parts.length == 2) {
+                    long referrerId = fromBase62Static(parts[0]);
+                    if (referrerId != userId) {
+                        response.setReferrerId(referrerId);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
         response.setStartTime(LocalDateTime.now());
         response.setCreatedAt(LocalDateTime.now());
         responseMapper.insert(response);
@@ -162,5 +176,15 @@ public class ResponseService {
 
     private String truncate(String s, int len) {
         return s != null && s.length() > len ? s.substring(0, len) + "..." : s;
+    }
+
+    private static final String BASE62_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    private long fromBase62Static(String s) {
+        long result = 0;
+        for (int i = 0; i < s.length(); i++) {
+            result = result * 62 + BASE62_CHARS.indexOf(s.charAt(i));
+        }
+        return result;
     }
 }

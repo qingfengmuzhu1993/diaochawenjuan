@@ -11,4 +11,7 @@ export const surveyApi = {
   aiDiagnose: (surveyId) => request.post('/ai/diagnose/' + surveyId),
   getTemplates: (category) => request.get('/templates', { params: { category } }),
   getTemplate: (id) => request.get('/templates/' + id),
+  shareSurvey(id) {
+    return request.post('/surveys/' + id + '/share')
+  },
 }

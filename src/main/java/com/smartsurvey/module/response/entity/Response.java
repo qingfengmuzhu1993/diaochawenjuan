@@ -14,6 +14,7 @@ public class Response {
     private String deviceFingerprint;
     private String userAgent;
     private String channel;
+    private Long referrerId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer durationSeconds;
@@ -39,6 +40,8 @@ public class Response {
     public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
     public String getChannel() { return channel; }
     public void setChannel(String channel) { this.channel = channel; }
+    public Long getReferrerId() { return referrerId; }
+    public void setReferrerId(Long referrerId) { this.referrerId = referrerId; }
     public LocalDateTime getStartTime() { return startTime; }
     public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
     public LocalDateTime getEndTime() { return endTime; }

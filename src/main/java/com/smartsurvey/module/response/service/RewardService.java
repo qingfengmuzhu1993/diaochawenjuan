@@ -1,5 +1,7 @@
 package com.smartsurvey.module.response.service;
 
+import com.smartsurvey.module.incentive.entity.Transaction;
+import com.smartsurvey.module.incentive.mapper.TransactionMapper;
 import com.smartsurvey.module.incentive.service.TransactionService;
 import com.smartsurvey.module.response.entity.Response;
 import com.smartsurvey.module.response.mapper.ResponseMapper;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 public class RewardService {
@@ -18,13 +21,16 @@ public class RewardService {
     private final UserMapper userMapper;
     private final ResponseMapper responseMapper;
     private final TransactionService transactionService;
+    private final TransactionMapper transactionMapper;
 
     public RewardService(SurveyMapper surveyMapper, UserMapper userMapper,
-                          ResponseMapper responseMapper, TransactionService transactionService) {
+                          ResponseMapper responseMapper, TransactionService transactionService,
+                          TransactionMapper transactionMapper) {
         this.surveyMapper = surveyMapper;
         this.userMapper = userMapper;
         this.responseMapper = responseMapper;
         this.transactionService = transactionService;
+        this.transactionMapper = transactionMapper;
     }
 
     @Transactional
@@ -56,6 +62,32 @@ public class RewardService {
         // Update response
         response.setRewardAmount(reward);
         responseMapper.updateById(response);
+    }
+
+    @Transactional
+    public void grantViralBonus(Long referrerId, BigDecimal answererReward, Long responseId) {
+        if (answererReward == null || answererReward.compareTo(BigDecimal.ZERO) <= 0) return;
+        BigDecimal bonus = answererReward.multiply(new BigDecimal("0.10")).setScale(2, java.math.RoundingMode.DOWN);
+        if (bonus.compareTo(new BigDecimal("0.01")) < 0) return;
+
+        // Create transaction record
+        Transaction tx = new Transaction();
+        tx.setUserId(referrerId);
+        tx.setType("reward");
+        tx.setAmount(bonus);
+        tx.setRelatedId(responseId);
+        tx.setRelatedType("viral_share");
+        tx.setStatus("success");
+        tx.setRemark("邀请好友答题奖励");
+        tx.setCreatedAt(LocalDateTime.now());
+        transactionMapper.insert(tx);
+
+        // Update user balance
+        User user = userMapper.selectById(referrerId);
+        if (user != null) {
+            user.setBalance(user.getBalance().add(bonus));
+            userMapper.updateById(user);
+        }
     }
 
     private BigDecimal calculateReward(Survey survey, Response response) {

@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS user_badges (
     FOREIGN KEY (badge_id) REFERENCES badges(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户勋章';
 
+ALTER TABLE responses ADD COLUMN IF NOT EXISTS referrer_id BIGINT AFTER channel;
+
 INSERT IGNORE INTO badges (name, description, icon, condition_type, condition_value) VALUES
 ('百答达人', '完成100份问卷回答', 'medal', 'total_responses', 100),
 ('质量之星', '连续50份回答审核通过', 'star', 'consecutive_approved', 50),

@@ -110,6 +110,11 @@ public class AntiCheatService {
         r.setReviewNote("自动审核通过");
         responseMapper.updateById(r);
         rewardService.grantReward(r);
+
+        // Process viral reward if this response came from a share link
+        if (r.getReferrerId() != null) {
+            rewardService.grantViralBonus(r.getReferrerId(), r.getRewardAmount(), r.getId());
+        }
     }
 
     @Transactional

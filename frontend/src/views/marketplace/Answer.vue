@@ -89,6 +89,21 @@
       <el-button v-if="currentIndex < totalQuestions - 1" type="primary" @click="nextQuestion">下一题</el-button>
       <el-button v-if="currentIndex === totalQuestions - 1" type="success" :loading="submitting" @click="handleSubmit">提交问卷</el-button>
     </div>
+
+    <div v-if="submitted" class="submit-success">
+      <el-result icon="success" title="提交成功！" sub-title="审核通过后奖励将自动到账">
+        <template #extra>
+          <el-button type="primary" @click="handleShare">分享给好友，得额外奖励</el-button>
+          <el-button @click="router.push('/marketplace')">返回广场</el-button>
+        </template>
+      </el-result>
+      <div v-if="shareUrl" class="share-box">
+        <p>好友通过你的链接完成答题，你可获得其奖励的10%</p>
+        <el-input v-model="shareUrl" readonly>
+          <template #append><el-button @click="copyShareUrl">复制链接</el-button></template>
+        </el-input>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -109,6 +124,9 @@ const currentIndex = ref(0)
 const answers = ref({})
 const currentAnswer = ref({ optionIds: [], text: '', rating: 0 })
 const submitting = ref(false)
+const submitted = ref(false)
+const shareUrl = ref('')
+const shareSurveyId = ref(null)
 const timedOut = ref(false)
 const matrixAnswers = ref({})
 const rankingItems = ref([])
@@ -252,9 +270,25 @@ async function handleSubmit() {
     const ansList = Object.values(answers.value)
     await responseApi.submitAnswers(startRes.responseId, { answers: ansList })
     await responseApi.submit(startRes.responseId)
-    ElMessage.success('提交成功！感谢您的参与')
-    router.push('/marketplace')
+    submitted.value = true
+    shareSurveyId.value = route.params.id
   } catch {} finally { submitting.value = false }
+}
+
+async function handleShare() {
+  try {
+    const res = await surveyApi.shareSurvey(shareSurveyId.value)
+    shareUrl.value = window.location.origin + '/#/marketplace/' + res.shareUrl.split('/').pop() + '?ref=' + res.shareCode
+  } catch {}
+}
+
+async function copyShareUrl() {
+  try {
+    await navigator.clipboard.writeText(shareUrl.value)
+    ElMessage.success('链接已复制')
+  } catch {
+    ElMessage.warning('复制失败，请手动复制')
+  }
 }
 </script>
 
@@ -272,4 +306,7 @@ async function handleSubmit() {
 .ranking-item:hover { background: #E8F5EF; }
 .ranking-item:active { cursor: grabbing; }
 .ranking-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #0D9488; color: #fff; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.submit-success { margin-top: 32px; }
+.share-box { margin-top: 16px; padding: 16px; background: #F5FAF8; border-radius: 12px; }
+.share-box p { font-size: 13px; color: #5F8B7A; margin: 0 0 10px; }
 </style>

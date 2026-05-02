@@ -8,6 +8,8 @@ import com.smartsurvey.module.survey.service.SurveyService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/surveys")
@@ -66,5 +68,34 @@ public class SurveyController {
     public ApiResponse<Void> delete(@CurrentUser Long userId, @PathVariable Long id) {
         surveyService.changeStatus(userId, id, "archived");
         return ApiResponse.ok();
+    }
+
+    @PostMapping("/{id}/share")
+    public ApiResponse<Map<String, String>> share(@CurrentUser Long userId, @PathVariable Long id) {
+        String shareCode = toBase62(userId) + "_" + toBase62(id);
+        Map<String, String> result = new HashMap<>();
+        result.put("shareUrl", "/survey/" + id + "?ref=" + shareCode);
+        result.put("shareCode", shareCode);
+        return ApiResponse.ok(result);
+    }
+
+    private static final String BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    private String toBase62(long num) {
+        if (num == 0) return "0";
+        StringBuilder sb = new StringBuilder();
+        while (num > 0) {
+            sb.append(BASE62.charAt((int)(num % 62)));
+            num /= 62;
+        }
+        return sb.reverse().toString();
+    }
+
+    private long fromBase62(String s) {
+        long result = 0;
+        for (int i = 0; i < s.length(); i++) {
+            result = result * 62 + BASE62.indexOf(s.charAt(i));
+        }
+        return result;
     }
 }

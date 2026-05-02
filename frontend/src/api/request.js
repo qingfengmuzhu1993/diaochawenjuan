@@ -4,7 +4,7 @@ import router from '@/router'
 
 const request = axios.create({
   baseURL: '/api/v1',
-  timeout: 10000,
+  timeout: 60000,
 })
 
 request.interceptors.request.use((config) => {

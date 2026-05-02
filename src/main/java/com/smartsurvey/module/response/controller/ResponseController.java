@@ -7,6 +7,8 @@ import com.smartsurvey.module.response.service.ResponseService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/responses")
@@ -36,5 +38,13 @@ public class ResponseController {
             @CurrentUser Long userId, @PathVariable Long responseId) {
         responseService.submitResponse(userId, responseId);
         return ApiResponse.ok();
+    }
+
+    @GetMapping("/my")
+    public ApiResponse<List<Map<String, Object>>> getMyResponses(
+            @CurrentUser Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok(responseService.getMyResponses(userId, page, size));
     }
 }

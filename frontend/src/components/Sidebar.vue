@@ -14,6 +14,10 @@
         <el-icon><EditPen /></el-icon>
         <span>我的问卷</span>
       </router-link>
+      <router-link to="/my-answers" class="nav-item" active-class="nav-active">
+        <el-icon><Document /></el-icon>
+        <span>我的回答</span>
+      </router-link>
       <router-link to="/notifications" class="nav-item" active-class="nav-active">
         <el-icon><Bell /></el-icon>
         <span>通知</span>
@@ -51,7 +55,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { userApi } from '@/api/user'
-import { List, EditPen, Bell, User, Setting, Wallet, SwitchButton } from '@element-plus/icons-vue'
+import { List, EditPen, Document, Bell, User, Setting, Wallet, SwitchButton } from '@element-plus/icons-vue'
 
 const auth = useAuthStore()
 const router = useRouter()

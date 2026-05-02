@@ -16,6 +16,7 @@ const routes = [
       { path: 'profile', name: 'Profile', component: () => import('@/views/user/Profile.vue') },
       { path: 'profile/:id', name: 'UserProfile', component: () => import('@/views/user/Profile.vue') },
       { path: 'wallet', name: 'Wallet', component: () => import('@/views/user/Wallet.vue') },
+      { path: 'my-answers', name: 'MyAnswers', component: () => import('@/views/user/MyAnswers.vue') },
       { path: 'notifications', name: 'Notifications', component: () => import('@/views/user/Notifications.vue') },
       { path: 'analytics/:id', name: 'Analytics', component: () => import('@/views/analytics/Dashboard.vue') },
       { path: 'admin/users', name: 'AdminUsers', component: () => import('@/views/admin/Users.vue') },

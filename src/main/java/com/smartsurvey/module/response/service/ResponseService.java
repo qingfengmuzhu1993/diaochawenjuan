@@ -14,12 +14,13 @@ import com.smartsurvey.module.survey.entity.Survey;
 import com.smartsurvey.module.survey.mapper.QuestionMapper;
 import com.smartsurvey.module.survey.mapper.SurveyMapper;
 import com.smartsurvey.module.survey.service.SurveyLogicService;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class ResponseService {
@@ -29,16 +30,19 @@ public class ResponseService {
     private final QuestionMapper questionMapper;
     private final SurveyLogicService surveyLogicService;
     private final AntiCheatService antiCheatService;
+    private final JdbcTemplate jdbcTemplate;
 
     public ResponseService(ResponseMapper responseMapper, AnswerMapper answerMapper,
                             SurveyMapper surveyMapper, QuestionMapper questionMapper,
-                            SurveyLogicService surveyLogicService, AntiCheatService antiCheatService) {
+                            SurveyLogicService surveyLogicService, AntiCheatService antiCheatService,
+                            JdbcTemplate jdbcTemplate) {
         this.responseMapper = responseMapper;
         this.answerMapper = answerMapper;
         this.surveyMapper = surveyMapper;
         this.questionMapper = questionMapper;
         this.surveyLogicService = surveyLogicService;
         this.antiCheatService = antiCheatService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Transactional
@@ -172,6 +176,19 @@ public class ResponseService {
                 throw new BusinessException(ErrorCode.ANSWER_EXPIRED);
             }
         }
+    }
+
+    public List<Map<String, Object>> getMyResponses(Long userId, int page, int size) {
+        int offset = (page - 1) * size;
+        String sql = "SELECT r.id, r.survey_id, s.title AS survey_title, r.status, " +
+            "r.reward_amount, r.quality_score, r.duration_seconds, r.created_at " +
+            "FROM responses r LEFT JOIN surveys s ON r.survey_id = s.id " +
+            "WHERE r.user_id = ? ORDER BY r.created_at DESC LIMIT ?, ?";
+        List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, userId, offset, size);
+        for (Map<String, Object> m : list) {
+            if (m.get("survey_title") == null) m.put("survey_title", "已删除的问卷");
+        }
+        return list;
     }
 
     private String truncate(String s, int len) {

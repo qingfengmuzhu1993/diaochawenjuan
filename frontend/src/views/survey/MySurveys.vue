@@ -124,14 +124,4 @@ async function handleDuplicate(row) {
 </script>
 
 <style scoped>
-.styled-table {
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.styled-table :deep(.el-table__header th) {
-  background: #E0FAF2;
-  color: #134E4A;
-  font-weight: 600;
-}
 </style>

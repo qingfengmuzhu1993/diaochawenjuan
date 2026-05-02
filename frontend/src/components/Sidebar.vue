@@ -78,8 +78,8 @@ function handleLogout() {
   position: fixed;
   left: 0;
   top: 0;
-  background: #FFFFFF;
-  border-right: 1px solid #D4EDE4;
+  background: var(--app-bg-card);
+  border-right: 1px solid var(--app-border);
   display: flex;
   flex-direction: column;
   z-index: 100;
@@ -90,7 +90,7 @@ function handleLogout() {
   align-items: center;
   gap: 10px;
   padding: 20px 16px;
-  border-bottom: 1px solid #E0FAF2;
+  border-bottom: 1px solid var(--app-bg-hover);
   cursor: pointer;
 }
 
@@ -102,7 +102,7 @@ function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFFFFF;
+  color: var(--app-bg-card);
   font-size: 20px;
   font-weight: 700;
 }
@@ -110,7 +110,7 @@ function handleLogout() {
 .brand-name {
   font-size: 17px;
   font-weight: 700;
-  color: #134E4A;
+  color: var(--app-text-primary);
 }
 
 .sidebar-nav {
@@ -126,21 +126,21 @@ function handleLogout() {
   padding: 10px 12px;
   border-radius: 10px;
   font-size: 14px;
-  color: #5F8B7A;
+  color: var(--app-text-secondary);
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
   margin-bottom: 2px;
   position: relative;
 }
 
 .nav-item:hover {
-  background: #F0FAF5;
-  color: #134E4A;
+  background: var(--app-primary-bg);
+  color: var(--app-text-primary);
 }
 
 .nav-active {
-  background: #E0FAF2;
-  color: #0D9488;
+  background: var(--app-bg-hover);
+  color: var(--app-primary);
   font-weight: 600;
 }
 
@@ -151,7 +151,7 @@ function handleLogout() {
 
 .sidebar-footer {
   padding: 12px 16px;
-  border-top: 1px solid #E0FAF2;
+  border-top: 1px solid var(--app-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -170,12 +170,12 @@ function handleLogout() {
 
 .user-name {
   font-size: 14px;
-  color: #134E4A;
+  color: var(--app-text-primary);
   font-weight: 600;
 }
 
 .user-level {
   font-size: 11px;
-  color: #87A697;
+  color: var(--app-text-muted);
 }
 </style>

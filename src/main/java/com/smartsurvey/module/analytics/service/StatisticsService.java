@@ -9,6 +9,8 @@ import com.smartsurvey.module.survey.entity.Question;
 import com.smartsurvey.module.survey.entity.Survey;
 import com.smartsurvey.module.survey.mapper.QuestionMapper;
 import com.smartsurvey.module.survey.mapper.SurveyMapper;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONUtil;
 import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -74,5 +76,120 @@ public class StatisticsService {
         }
         stats.put("questionAnalysis", questionStats);
         return stats;
+    }
+
+    public Map<String, Object> crossTabulation(Long surveyId, Long rowQId, Long colQId) {
+        Question rowQ = questionMapper.selectById(rowQId);
+        Question colQ = questionMapper.selectById(colQId);
+
+        List<Response> responses = responseMapper.selectList(
+            new LambdaQueryWrapper<Response>()
+                .eq(Response::getSurveyId, surveyId)
+                .eq(Response::getStatus, "approved"));
+
+        List<String> rowLabels = extractOptionTexts(rowQ);
+        List<String> colLabels = extractOptionTexts(colQ);
+
+        int R = rowLabels.size(), C = colLabels.size();
+        int[][] matrix = new int[R][C];
+
+        for (Response resp : responses) {
+            Answer rowAns = answerMapper.selectOne(new LambdaQueryWrapper<Answer>()
+                .eq(Answer::getResponseId, resp.getId()).eq(Answer::getQuestionId, rowQId));
+            Answer colAns = answerMapper.selectOne(new LambdaQueryWrapper<Answer>()
+                .eq(Answer::getResponseId, resp.getId()).eq(Answer::getQuestionId, colQId));
+            if (rowAns == null || colAns == null) continue;
+
+            int ri = findOptionIndex(rowAns, rowQ);
+            int ci = findOptionIndex(colAns, colQ);
+            if (ri >= 0 && ci >= 0) matrix[ri][ci]++;
+        }
+
+        double chiSquare = computeChiSquare(matrix, R, C);
+        int df = (R - 1) * (C - 1);
+        double pValue = chiSquarePValue(chiSquare, df);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("rowLabels", rowLabels);
+        result.put("colLabels", colLabels);
+        result.put("matrix", matrix);
+        result.put("chiSquare", Math.round(chiSquare * 1000.0) / 1000.0);
+        result.put("degreesOfFreedom", df);
+        result.put("pValue", Math.round(pValue * 10000.0) / 10000.0);
+        result.put("significant", pValue < 0.05);
+        result.put("highlySignificant", pValue < 0.01);
+        return result;
+    }
+
+    private List<String> extractOptionTexts(Question q) {
+        List<String> labels = new ArrayList<>();
+        if (q != null && q.getOptions() != null) {
+            try {
+                JSONArray opts = JSONUtil.parseArray(q.getOptions());
+                for (int i = 0; i < opts.size(); i++) {
+                    labels.add(opts.getJSONObject(i).getStr("text", ""));
+                }
+            } catch (Exception ignored) {}
+        }
+        return labels;
+    }
+
+    private int findOptionIndex(Answer a, Question q) {
+        if (a.getAnswerOptions() == null || q == null || q.getOptions() == null) return -1;
+        try {
+            JSONArray selected = JSONUtil.parseArray(a.getAnswerOptions());
+            if (selected.isEmpty()) return -1;
+            Long optId = Long.valueOf(selected.get(0).toString());
+            JSONArray opts = JSONUtil.parseArray(q.getOptions());
+            for (int i = 0; i < opts.size(); i++) {
+                if (optId.equals(opts.getJSONObject(i).getLong("id"))) return i;
+            }
+        } catch (Exception ignored) {}
+        return -1;
+    }
+
+    private double computeChiSquare(int[][] matrix, int R, int C) {
+        int total = 0;
+        int[] rowSums = new int[R], colSums = new int[C];
+        for (int i = 0; i < R; i++) {
+            for (int j = 0; j < C; j++) {
+                total += matrix[i][j];
+                rowSums[i] += matrix[i][j];
+                colSums[j] += matrix[i][j];
+            }
+        }
+        if (total == 0) return 0;
+
+        double chi = 0;
+        for (int i = 0; i < R; i++) {
+            for (int j = 0; j < C; j++) {
+                double expected = (double) rowSums[i] * colSums[j] / total;
+                if (expected > 0) {
+                    double diff = matrix[i][j] - expected;
+                    chi += diff * diff / expected;
+                }
+            }
+        }
+        return chi;
+    }
+
+    private double chiSquarePValue(double x, int df) {
+        if (x <= 0 || df <= 0) return 1.0;
+        double m = x / df;
+        double z = (Math.pow(m, 1.0 / 3) - (1 - 2.0 / (9 * df))) / Math.sqrt(2.0 / (9 * df));
+        return 2 * (1 - normalCDF(Math.abs(z)));
+    }
+
+    private double normalCDF(double x) {
+        return 0.5 * (1 + erf(x / Math.sqrt(2)));
+    }
+
+    private double erf(double x) {
+        double t = 1.0 / (1.0 + 0.5 * Math.abs(x));
+        double tau = t * Math.exp(-x * x - 1.26551223 +
+            t * (1.00002368 + t * (0.37409196 + t * (0.09678418 +
+            t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 +
+            t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+        return x >= 0 ? 1 - tau : tau - 1;
     }
 }

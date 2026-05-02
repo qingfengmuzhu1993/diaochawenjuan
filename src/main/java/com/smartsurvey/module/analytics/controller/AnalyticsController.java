@@ -30,4 +30,12 @@ public class AnalyticsController {
     public ApiResponse<Map<String, Object>> getSentiment(@PathVariable Long surveyId, @PathVariable Long questionId) {
         return ApiResponse.ok(aiAnalysisService.analyzeSentiment(surveyId, questionId));
     }
+
+    @GetMapping("/surveys/{surveyId}/cross")
+    public ApiResponse<Map<String, Object>> crossTabulation(
+            @PathVariable Long surveyId,
+            @RequestParam Long rowQuestionId,
+            @RequestParam Long colQuestionId) {
+        return ApiResponse.ok(statisticsService.crossTabulation(surveyId, rowQuestionId, colQuestionId));
+    }
 }

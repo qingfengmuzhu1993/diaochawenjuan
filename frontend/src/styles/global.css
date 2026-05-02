@@ -24,16 +24,36 @@ a:hover { color: var(--app-primary-dark); }
 
 .page-title { font-size: 26px; font-weight: 800; color: #0F2928; letter-spacing: -0.02em; margin-bottom: 4px; }
 
+.filter-pills { display: flex; gap: 10px; flex-wrap: wrap; }
+
 .filter-pill {
-  padding: 7px 20px; border-radius: 20px; border: 1.5px solid var(--app-border);
-  background: var(--app-bg-card); color: var(--app-text-secondary);
-  font-size: 13px; font-weight: 500; cursor: pointer;
-  transition: all var(--transition-fast); letter-spacing: 0.02em;
+  padding: 10px 24px;
+  border-radius: 24px;
+  border: 2px solid var(--app-border);
+  background: var(--app-bg-card);
+  color: var(--app-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  letter-spacing: 0.03em;
+  outline: none;
+  white-space: nowrap;
 }
-.filter-pill:hover { background: var(--app-primary-bg); border-color: var(--app-primary-light); color: var(--app-primary); }
+.filter-pill:hover {
+  background: var(--app-primary-bg);
+  border-color: var(--app-primary);
+  color: var(--app-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(13,148,136,0.12);
+}
 .filter-pill.active {
-  background: var(--app-primary); border-color: var(--app-primary);
-  color: #fff; font-weight: 600; box-shadow: 0 2px 8px rgba(13,148,136,0.25);
+  background: linear-gradient(135deg, var(--app-primary), var(--app-primary-dark));
+  border-color: var(--app-primary);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(13,148,136,0.30);
+  transform: translateY(-1px);
 }
 
 .el-button--primary { font-weight: 600 !important; letter-spacing: 0.02em !important; }

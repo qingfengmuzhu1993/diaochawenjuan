@@ -106,7 +106,7 @@ async function handleBatchDelete() {
   try {
     await ElMessageBox.confirm('确定删除选中的' + selectedIds.value.length + '份问卷吗？', '批量删除')
     for (const id of selectedIds.value) {
-      await surveyApi.deleteSurvey(id)
+      await surveyApi.delete(id)
     }
     ElMessage.success('批量删除成功')
     selectedIds.value = []

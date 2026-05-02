@@ -15,5 +15,4 @@ export const surveyApi = {
     return request.post('/surveys/' + id + '/share')
   },
   duplicateSurvey: (id) => request.post('/surveys/' + id + '/duplicate'),
-  deleteSurvey: (id) => request.delete('/surveys/' + id),
 }

@@ -117,6 +117,8 @@ public class SurveyService {
             .orderByDesc(Survey::getCreatedAt);
         if (status != null && !status.isEmpty()) {
             wrapper.eq(Survey::getStatus, status);
+        } else {
+            wrapper.ne(Survey::getStatus, "archived");
         }
         Page<Survey> result = surveyMapper.selectPage(p, wrapper);
 

@@ -25,9 +25,33 @@
       </div>
     </div>
     <el-row :gutter="16" style="margin-top:24px">
-      <el-col :span="8"><el-statistic title="粉丝" :value="followers.length" /></el-col>
-      <el-col :span="8"><el-statistic title="关注" :value="following.length" /></el-col>
+      <el-col :span="8">
+        <div class="stat-clickable" @click="openFollowDialog('followers')">
+          <el-statistic title="粉丝" :value="followers.length" />
+        </div>
+      </el-col>
+      <el-col :span="8">
+        <div class="stat-clickable" @click="openFollowDialog('following')">
+          <el-statistic title="关注" :value="following.length" />
+        </div>
+      </el-col>
     </el-row>
+
+    <!-- followers/following dialog -->
+    <el-dialog v-model="followDialogVisible" :title="followDialogTitle" width="420px" destroy-on-close>
+      <div v-if="followDialogList.length === 0" style="text-align:center;color:#999;padding:20px">暂无数据</div>
+      <div v-for="user in followDialogList" :key="user.id" class="follow-list-item">
+        <router-link :to="'/profile/' + user.id" class="follow-user-link" @click="followDialogVisible = false">
+          <el-avatar :size="36" :src="user.avatarUrl || user.avatar_url" />
+          <div>
+            <div class="follow-user-name">{{ user.username }}</div>
+            <div class="follow-user-bio">{{ (user.bio || '').substring(0, 30) }}</div>
+          </div>
+        </router-link>
+        <el-button v-if="followDialogType === 'following' && isSelf"
+          link type="danger" size="small" @click="handleUnfollowInDialog(user.id)">取消关注</el-button>
+      </div>
+    </el-dialog>
     <el-dialog v-model="bioDialogVisible" title="编辑个人简介" width="450px" destroy-on-close>
       <el-input v-model="editBio" type="textarea" :rows="4" placeholder="介绍一下自己..." maxlength="200" show-word-limit />
       <template #footer>
@@ -98,6 +122,10 @@ const loading = ref(false)
 const badges = ref([])
 const pointsBalance = ref(0)
 const exchanging = ref(false)
+const followDialogVisible = ref(false)
+const followDialogType = ref('followers')
+const followDialogList = ref([])
+const followDialogTitle = computed(() => followDialogType.value === 'followers' ? '粉丝' : '关注')
 const isSelf = computed(() => !route.params.id || route.params.id == auth.user?.id)
 
 async function fetchBadges() {
@@ -139,11 +167,25 @@ onMounted(async () => {
   } catch {} finally { loading.value = false }
 })
 
+function openFollowDialog(type) {
+  followDialogType.value = type
+  followDialogList.value = type === 'followers' ? followers.value : following.value
+  followDialogVisible.value = true
+}
 async function handleFollow() {
   try { await userApi.follow(route.params.id); isFollowed.value = true; ElMessage.success('已关注') } catch {}
 }
 async function handleUnfollow() {
   try { await userApi.unfollow(route.params.id); isFollowed.value = false; ElMessage.success('已取消关注') } catch {}
+}
+async function handleUnfollowInDialog(userId) {
+  try {
+    await userApi.unfollow(userId)
+    // remove from the dialog list and refresh counts
+    followDialogList.value = followDialogList.value.filter(u => u.id !== userId)
+    following.value = following.value.filter(u => u.id !== userId)
+    ElMessage.success('已取消关注')
+  } catch {}
 }
 function openBioDialog() {
   editBio.value = profile.value.bio || ''
@@ -190,6 +232,13 @@ async function handleUpdate() {
 }
 
 .bio-line { display: flex; align-items: center; gap: 8px; }
+.stat-clickable { cursor: pointer; border-radius: 8px; padding: 8px; transition: background 0.15s; }
+.stat-clickable:hover { background: #F5FAF8; }
+.follow-list-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #E8F5EF; }
+.follow-list-item:last-child { border-bottom: none; }
+.follow-user-link { display: flex; align-items: center; gap: 10px; text-decoration: none; flex: 1; }
+.follow-user-name { font-size: 14px; font-weight: 500; color: #134E4A; }
+.follow-user-bio { font-size: 12px; color: #87A697; margin-top: 2px; }
 .profile-tags {
   display: flex;
   gap: 8px;

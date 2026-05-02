@@ -40,12 +40,12 @@ public class UserController {
             return ApiResponse.fail(40000, "文件大小不能超过2MB");
         }
 
-        File dir = new File(uploadPath, "avatars");
+        File dir = Paths.get(uploadPath, "avatars").toAbsolutePath().toFile();
         if (!dir.exists()) dir.mkdirs();
 
         String filename = "avatar_" + userId + "_" + System.currentTimeMillis() + "." + ext.toLowerCase();
         File dest = new File(dir, filename);
-        file.transferTo(dest);
+        file.transferTo(dest.getAbsoluteFile());
 
         String avatarUrl = "/uploads/avatars/" + filename;
         userService.updateAvatar(userId, avatarUrl);

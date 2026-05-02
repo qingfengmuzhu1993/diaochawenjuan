@@ -5,4 +5,5 @@ export const marketplaceApi = {
   getRecommended: () => request.get('/marketplace/recommended'),
   getLeaderboard: (period) => request.get('/leaderboard', { params: { period } }),
   checkIn: () => request.post('/checkin'),
+  getCheckinStatus: () => request.get('/checkin/status'),
 }

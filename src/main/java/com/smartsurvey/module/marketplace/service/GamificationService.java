@@ -84,4 +84,12 @@ public class GamificationService {
 
         return "签到成功，连续" + streak + "天，获得" + points + "积分";
     }
+
+    public boolean hasCheckedInToday(Long userId) {
+        LocalDate today = LocalDate.now();
+        Integer count = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM sign_in_records WHERE user_id = ? AND sign_date = ?",
+            Integer.class, userId, today.toString());
+        return count != null && count > 0;
+    }
 }

@@ -24,4 +24,9 @@ public class GamificationController {
     public ApiResponse<String> checkIn(@CurrentUser Long userId) {
         return ApiResponse.ok(gamificationService.checkIn(userId));
     }
+
+    @GetMapping("/checkin/status")
+    public ApiResponse<Boolean> checkInStatus(@CurrentUser Long userId) {
+        return ApiResponse.ok(gamificationService.hasCheckedInToday(userId));
+    }
 }

@@ -6,7 +6,10 @@
         <el-button @click="showLeaderboard = true" round>
           <el-icon><Trophy /></el-icon>排行榜
         </el-button>
-        <el-button type="primary" @click="handleCheckIn" round>
+        <el-button v-if="checkedIn" round disabled class="checked-in-btn">
+          <el-icon><Calendar /></el-icon>已签到
+        </el-button>
+        <el-button v-else type="primary" @click="handleCheckIn" round>
           <el-icon><Calendar /></el-icon>签到
         </el-button>
       </div>
@@ -146,8 +149,13 @@ const maxDuration = ref(null)
 const showLeaderboard = ref(false)
 const boardPeriod = ref('daily')
 const leaderboard = ref([])
+const checkedIn = ref(false)
 
-onMounted(() => { fetchList(); fetchMyFollowing() })
+onMounted(() => { fetchList(); fetchMyFollowing(); fetchCheckinStatus() })
+
+async function fetchCheckinStatus() {
+  try { checkedIn.value = await marketplaceApi.getCheckinStatus() } catch {}
+}
 
 async function fetchMyFollowing() {
   if (!authUserId) return
@@ -198,6 +206,7 @@ async function toggleCardFollow(userId) {
 async function handleCheckIn() {
   try {
     const msg = await marketplaceApi.checkIn()
+    checkedIn.value = true
     ElMessage.success(msg)
   } catch {}
 }
@@ -371,6 +380,7 @@ async function fetchLeaderboard() {
   font-weight: 700;
   color: #F59E0B;
 }
+.checked-in-btn { color: #87A697 !important; border-color: #CCE4D6 !important; background: #F5FAF8 !important; cursor: default !important; }
 
 .filter-panel { background: #F5FAF8; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
 .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }

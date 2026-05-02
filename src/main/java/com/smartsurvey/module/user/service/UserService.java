@@ -39,6 +39,13 @@ public class UserService {
         return buildProfile(user);
     }
 
+    public void updateAvatar(Long userId, String avatarUrl) {
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        user.setAvatarUrl(avatarUrl);
+        userMapper.updateById(user);
+    }
+
     private UserProfileResponse buildProfile(User user) {
         UserProfileResponse resp = new UserProfileResponse();
         resp.setId(user.getId());

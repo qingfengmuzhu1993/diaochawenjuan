@@ -1,5 +1,6 @@
 import request from './request'
 export const userApi = {
+  uploadAvatar: (formData) => request.post('/users/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getProfile: () => request.get('/users/profile'),
   getProfileById: (id) => request.get('/users/profile/' + id),
   updateProfile: (data) => request.put('/users/profile', data),

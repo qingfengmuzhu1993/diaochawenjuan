@@ -3,7 +3,14 @@
     <h1 class="page-title">个人主页</h1>
     <div class="profile-card">
       <div class="profile-header">
-        <el-avatar :size="80" :src="profile.avatarUrl" />
+        <div class="avatar-wrapper" :class="{ clickable: isSelf }" @click="isSelf && triggerUpload()">
+          <el-avatar :size="80" :src="profile.avatarUrl || profile.avatar_url" />
+          <div v-if="isSelf" class="avatar-overlay">
+            <el-icon><Camera /></el-icon>
+            <span>修改</span>
+          </div>
+        </div>
+        <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="handleAvatarUpload" />
         <div class="profile-info">
           <h2>{{ profile.username }}</h2>
           <p class="bio-line">
@@ -108,10 +115,11 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { userApi } from '@/api/user'
 import { ElMessage } from 'element-plus'
-import { Edit } from '@element-plus/icons-vue'
+import { Edit, Camera } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const auth = useAuthStore()
+const fileInput = ref(null)
 const profile = ref({})
 const followers = ref([])
 const following = ref([])
@@ -187,6 +195,21 @@ async function handleUnfollowInDialog(userId) {
     ElMessage.success('已取消关注')
   } catch {}
 }
+function triggerUpload() { fileInput.value?.click() }
+
+async function handleAvatarUpload(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await userApi.uploadAvatar(formData)
+    profile.value.avatarUrl = res.avatarUrl
+    ElMessage.success('头像更新成功')
+  } catch {}
+  e.target.value = ''
+}
+
 function openBioDialog() {
   editBio.value = profile.value.bio || ''
   bioDialogVisible.value = true
@@ -202,6 +225,10 @@ async function handleUpdate() {
 </script>
 
 <style scoped>
+.avatar-wrapper { position: relative; border-radius: 50%; overflow: hidden; }
+.avatar-wrapper.clickable { cursor: pointer; }
+.avatar-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); color: #fff; font-size: 12px; opacity: 0; transition: opacity 0.2s; border-radius: 50%; }
+.avatar-wrapper.clickable:hover .avatar-overlay { opacity: 1; }
 .profile-card {
   background: #FFFFFF;
   border-radius: 16px;

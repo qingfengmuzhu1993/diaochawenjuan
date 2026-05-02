@@ -147,7 +147,15 @@ const showLeaderboard = ref(false)
 const boardPeriod = ref('daily')
 const leaderboard = ref([])
 
-onMounted(() => fetchList())
+onMounted(() => { fetchList(); fetchMyFollowing() })
+
+async function fetchMyFollowing() {
+  if (!authUserId) return
+  try {
+    const users = await userApi.getFollowing(authUserId)
+    users.forEach(u => { cardFollowed.value[u.id] = true })
+  } catch {}
+}
 
 async function fetchList() {
   try {

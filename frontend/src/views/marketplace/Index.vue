@@ -1,9 +1,12 @@
 <template>
   <div class="marketplace">
-    <div class="page-header">
-      <h1 class="page-title">问卷广场</h1>
-      <div class="header-actions">
-        <el-button @click="showLeaderboard = true" round>
+    <div class="hero-section">
+      <div class="hero-left">
+        <h1 class="page-title">问卷广场</h1>
+        <p class="hero-subtitle">发现高质量问卷，认真答题赚收益</p>
+      </div>
+      <div class="hero-actions">
+        <el-button @click="showLeaderboard = true" round class="action-btn">
           <el-icon><Trophy /></el-icon>排行榜
         </el-button>
         <el-button v-if="checkedIn" round disabled class="checked-in-btn">
@@ -15,61 +18,68 @@
       </div>
     </div>
 
-    <div class="filter-pills">
-      <button
-        v-for="opt in sortOptions"
-        :key="opt.value"
-        class="filter-pill"
-        :class="{ active: sort === opt.value }"
-        @click="sort = opt.value; fetchList()"
-      >{{ opt.label }}</button>
-    </div>
-
-    <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
-      <el-input v-model="keyword" placeholder="搜索问卷标题..." clearable
-        :prefix-icon="Search" @clear="fetchList" @keyup.enter="fetchList"
-        style="max-width:320px" size="default" />
-      <el-button @click="showFilter = !showFilter" round>
-        <el-icon><Filter /></el-icon>筛选
-      </el-button>
-    </div>
-
-    <div v-if="showFilter" class="filter-panel">
-      <div class="filter-row">
-        <span class="filter-label">奖励区间</span>
-        <el-input-number v-model="minReward" :min="0" :step="0.5" size="small" placeholder="最低" controls-position="right" style="width:120px" />
-        <span style="margin:0 8px;color:#999">—</span>
-        <el-input-number v-model="maxReward" :min="0" :step="0.5" size="small" placeholder="最高" controls-position="right" style="width:120px" />
+    <div class="toolbar">
+      <div class="filter-pills">
+        <button
+          v-for="opt in sortOptions"
+          :key="opt.value"
+          class="filter-pill"
+          :class="{ active: sort === opt.value }"
+          @click="sort = opt.value; fetchList()"
+        >{{ opt.label }}</button>
       </div>
-      <div class="filter-row">
-        <span class="filter-label">最长时长</span>
-        <el-select v-model="maxDuration" placeholder="不限" size="small" clearable style="width:160px">
-          <el-option label="3分钟内" :value="3" />
-          <el-option label="5分钟内" :value="5" />
-          <el-option label="10分钟内" :value="10" />
-          <el-option label="15分钟内" :value="15" />
-        </el-select>
-      </div>
-      <div class="filter-row">
-        <el-button type="primary" size="small" @click="fetchList">应用筛选</el-button>
-        <el-button size="small" @click="resetFilters">重置</el-button>
+
+      <div class="search-row">
+        <el-input v-model="keyword" placeholder="搜索问卷标题..." clearable
+          :prefix-icon="Search" @clear="fetchList" @keyup.enter="fetchList"
+          size="default" class="search-input" />
+        <el-button @click="showFilter = !showFilter" round class="filter-btn">
+          <el-icon><Filter /></el-icon>{{ showFilter ? '收起筛选' : '筛选' }}
+        </el-button>
       </div>
     </div>
 
-    <div class="card-grid" style="margin-top:20px">
+    <transition name="slide-down">
+      <div v-if="showFilter" class="filter-panel">
+        <div class="filter-row">
+          <span class="filter-label">奖励区间</span>
+          <el-input-number v-model="minReward" :min="0" :step="0.5" size="small" placeholder="最低" controls-position="right" />
+          <span class="filter-separator">—</span>
+          <el-input-number v-model="maxReward" :min="0" :step="0.5" size="small" placeholder="最高" controls-position="right" />
+          <span class="filter-unit">元/份</span>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">最长时长</span>
+          <el-select v-model="maxDuration" placeholder="不限" size="small" clearable class="filter-select">
+            <el-option label="3 分钟内" :value="3" />
+            <el-option label="5 分钟内" :value="5" />
+            <el-option label="10 分钟内" :value="10" />
+            <el-option label="15 分钟内" :value="15" />
+          </el-select>
+        </div>
+        <div class="filter-actions">
+          <el-button type="primary" size="small" @click="fetchList" round>应用筛选</el-button>
+          <el-button size="small" @click="resetFilters" round>重置</el-button>
+        </div>
+      </div>
+    </transition>
+
+    <div class="card-grid">
       <div v-for="item in list" :key="item.id" class="survey-card" @click="router.push('/marketplace/' + item.id)">
         <div class="card-header">
           <h4>{{ item.title }}</h4>
-          <el-tag type="warning" size="small" effect="plain" round>¥{{ item.rewardPerResponse || 0 }}/份</el-tag>
+          <el-tag type="warning" size="small" effect="dark" round>¥{{ item.rewardPerResponse || 0 }}/份</el-tag>
         </div>
         <p class="card-desc">{{ item.description?.substring(0, 80) || '暂无描述' }}</p>
         <div class="card-meta">
-          <span><el-icon><Document /></el-icon>{{ item.questionCount }}题</span>
-          <span><el-icon><User /></el-icon>剩余{{ item.remainingQuota }}份</span>
+          <span class="meta-item"><el-icon><Document /></el-icon>{{ item.questionCount }} 题</span>
+          <span class="meta-item"><el-icon><User /></el-icon>剩余 {{ item.remainingQuota }} 份</span>
         </div>
         <div class="card-footer">
           <div class="creator">
-            <el-avatar :size="24" />
+            <el-avatar :size="28" :style="{ background: avatarColor(item.creatorId) }">
+              {{ (item.creatorName || '?')[0] }}
+            </el-avatar>
             <router-link :to="'/profile/' + item.creatorId" class="creator-name" @click.stop>@{{ item.creatorName || '匿名用户' }}</router-link>
             <el-button v-if="item.creatorId && item.creatorId !== authUserId"
               link size="small" type="primary"
@@ -80,9 +90,9 @@
       </div>
     </div>
 
-    <el-empty v-if="list.length === 0" description="暂无问卷" />
+    <el-empty v-if="list.length === 0" description="暂无问卷，换个筛选条件试试" />
 
-    <div style="display:flex;justify-content:center;margin-top:24px">
+    <div class="pagination-wrap">
       <el-pagination
         v-model:current-page="page"
         :page-size="20"
@@ -92,19 +102,24 @@
       />
     </div>
 
-    <el-dialog v-model="showLeaderboard" title="排行榜" width="420px" destroy-on-close>
-      <div class="filter-pills" style="margin-bottom:16px">
-        <button
-          v-for="p in periods"
-          :key="p.value"
-          class="filter-pill"
-          :class="{ active: boardPeriod === p.value }"
+    <el-dialog v-model="showLeaderboard" title="🏆 排行榜" width="420px" destroy-on-close>
+      <div class="filter-pills" style="justify-content:center;margin-bottom:20px">
+        <button v-for="p in periods" :key="p.value"
+          class="filter-pill" :class="{ active: boardPeriod === p.value }"
           @click="boardPeriod = p.value; fetchLeaderboard()"
         >{{ p.label }}</button>
       </div>
+      <div v-if="leaderboard.length === 0" style="text-align:center;color:var(--app-text-muted);padding:20px">暂无排行数据</div>
       <div v-for="entry in leaderboard" :key="entry.userId" class="board-item">
-        <span class="board-rank" :class="'rank-' + entry.rank">#{{ entry.rank }}</span>
-        <el-avatar :size="36" :src="entry.avatarUrl" />
+        <span class="board-rank" :class="'rank-' + entry.rank">
+          <template v-if="entry.rank === 1">🥇</template>
+          <template v-else-if="entry.rank === 2">🥈</template>
+          <template v-else-if="entry.rank === 3">🥉</template>
+          <template v-else>#{{ entry.rank }}</template>
+        </span>
+        <el-avatar :size="40" :style="{ background: boardAvatarColor(entry.rank) }">
+          {{ (entry.username || '?')[0] }}
+        </el-avatar>
         <span class="board-name">{{ entry.username }}</span>
         <span class="board-earnings">¥{{ entry.earnings }}</span>
       </div>
@@ -214,40 +229,145 @@ async function handleCheckIn() {
 async function fetchLeaderboard() {
   try { leaderboard.value = (await marketplaceApi.getLeaderboard(boardPeriod.value)).entries || [] } catch {}
 }
+
+const avatarColors = ['#0D9488', '#6366F1', '#F59E0B', '#EF4444', '#8B5CF6', '#10B981', '#EC4899', '#3B82F6']
+function avatarColor(id) { return avatarColors[(id || 1) % avatarColors.length] }
+function boardAvatarColor(rank) { return rank <= 3 ? ['#F59E0B','#94A3B8','#D97706'][rank-1] : avatarColors[rank % avatarColors.length] }
 </script>
 
 <style scoped>
+/* ====== Hero Section ====== */
+.hero-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+.hero-left { flex: 1; }
+.hero-subtitle {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: var(--app-text-muted);
+  font-weight: 400;
+  line-height: 1.5;
+}
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.action-btn {
+  border-color: var(--app-border) !important;
+  color: var(--app-text-secondary) !important;
+  font-weight: 500;
+}
+.action-btn:hover {
+  border-color: var(--app-primary) !important;
+  color: var(--app-primary) !important;
+}
+
+/* ====== Toolbar ====== */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.search-input {
+  width: 280px;
+}
+.search-input :deep(.el-input__wrapper) {
+  background: var(--app-bg-card);
+  border-radius: 24px !important;
+  padding: 6px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid transparent;
+  transition: all var(--transition-fast);
+}
+.search-input :deep(.el-input__wrapper:hover),
+.search-input :deep(.el-input__wrapper.is-focus) {
+  border-color: var(--app-primary-light);
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+}
+.filter-btn {
+  border-color: var(--app-border) !important;
+  color: var(--app-text-secondary) !important;
+  font-weight: 500;
+}
+
+/* ====== Filter Panel ====== */
+.filter-panel {
+  background: var(--app-bg-card);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--app-border-light);
+  box-shadow: var(--shadow-md);
+}
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.filter-label {
+  width: 72px;
+  font-size: 13px;
+  color: var(--app-text-secondary);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.filter-separator {
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+.filter-unit {
+  font-size: 12px;
+  color: var(--app-text-muted);
+}
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+}
+.filter-select {
+  width: 160px;
+}
+
+.slide-down-enter-active { transition: all 0.25s ease-out; }
+.slide-down-leave-active { transition: all 0.15s ease-in; }
+.slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-8px); }
+
+/* ====== Card Grid ====== */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 18px;
 }
 
-@media (max-width: 1200px) {
-  .card-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .card-grid {
-    grid-template-columns: 1fr;
-  }
-}
+@media (max-width: 1200px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .card-grid { grid-template-columns: 1fr; } }
 
 .survey-card {
   background: var(--app-bg-card);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: var(--radius-lg);
+  padding: 22px;
   border: 1px solid var(--app-border-light);
   box-shadow: var(--shadow-card);
   transition: all var(--transition-normal);
   cursor: pointer;
 }
-
 .survey-card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  border-color: var(--app-border);
 }
 
 .card-header {
@@ -255,89 +375,106 @@ async function fetchLeaderboard() {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 10px;
+  gap: 8px;
 }
-
 .card-header h4 {
   margin: 0;
   font-size: 15px;
   color: var(--app-text-primary);
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.45;
+  flex: 1;
+  min-width: 0;
 }
 
 .card-desc {
   color: var(--app-text-muted);
   font-size: 13px;
-  line-height: 1.6;
-  margin: 0 0 14px;
+  line-height: 1.65;
+  margin: 0 0 16px;
+  min-height: 42px;
 }
 
 .card-meta {
   display: flex;
-  gap: 16px;
-  margin-bottom: 14px;
-  font-size: 13px;
-  color: var(--app-text-secondary);
+  gap: 18px;
+  margin-bottom: 16px;
 }
-
-.card-meta span {
+.meta-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--app-text-secondary);
+  font-weight: 500;
 }
 
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid var(--app-border-light);
 }
 
 .creator {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 12px;
-  color: var(--app-text-muted);
 }
-.creator-name { color: var(--app-text-secondary); text-decoration: none; font-weight: 500; }
-.creator-name:hover { color: var(--app-primary); text-decoration: underline; }
+.creator-name {
+  color: var(--app-text-secondary);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13px;
+}
+.creator-name:hover { color: var(--app-primary); }
 
+/* ====== Pagination ====== */
+.pagination-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+  padding: 16px 0;
+}
+
+/* ====== Leaderboard ====== */
 .board-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 0;
+  gap: 14px;
+  padding: 12px 4px;
   border-bottom: 1px solid var(--app-border-light);
 }
-
-.board-item:last-child {
-  border-bottom: none;
-}
+.board-item:last-child { border-bottom: none; }
 
 .board-rank {
   font-weight: 700;
-  font-size: 16px;
-  width: 32px;
+  font-size: 18px;
+  width: 36px;
+  text-align: center;
 }
-
-.rank-1 { color: #F59E0B; }
-.rank-2 { color: #87A697; }
-.rank-3 { color: #D97706; }
+.rank-1, .rank-2, .rank-3 { font-size: 22px; }
 
 .board-name {
   flex: 1;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--app-text-primary);
+  font-weight: 500;
 }
-
 .board-earnings {
   font-weight: 700;
+  font-size: 15px;
   color: #F59E0B;
 }
-.checked-in-btn { color: var(--app-text-muted) !important; border-color: #CCE4D6 !important; background: var(--app-primary-bg) !important; cursor: default !important; }
 
-.filter-panel { background: var(--app-primary-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-.filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.filter-row:last-child { margin-bottom: 0; }
-.filter-label { width: 70px; font-size: 13px; color: var(--app-text-secondary); font-weight: 500; flex-shrink: 0; }
+/* ====== Misc ====== */
+.checked-in-btn {
+  color: var(--app-text-muted) !important;
+  border-color: var(--app-border) !important;
+  background: var(--app-primary-bg) !important;
+  cursor: default !important;
+  font-weight: 500;
+}
 </style>

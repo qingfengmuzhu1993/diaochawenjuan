@@ -7,4 +7,6 @@ public interface AiProvider {
     String diagnoseSurvey(String title, String questionsJson);
 
     String improveQuestion(String questionContent);
+
+    String analyze(String systemPrompt, String userPrompt);
 }

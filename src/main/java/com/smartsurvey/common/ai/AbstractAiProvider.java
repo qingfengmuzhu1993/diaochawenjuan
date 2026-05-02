@@ -57,6 +57,11 @@ public abstract class AbstractAiProvider implements AiProvider {
         return callChatApi(systemPrompt, userPrompt);
     }
 
+    @Override
+    public String analyze(String systemPrompt, String userPrompt) {
+        return callChatApi(systemPrompt, userPrompt);
+    }
+
     private String buildSurveySystemPrompt() {
         return "你是一个专业的问卷调研专家。请严格按照要求生成调查问卷，并以严格的JSON格式返回。\n\n" +
                "题目类型可选：single_choice(单选), multiple_choice(多选), rating(量表1-5), essay(开放题)\n\n" +

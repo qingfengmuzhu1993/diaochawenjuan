@@ -17,4 +17,7 @@ export const userApi = {
   getUnreadCount: () => request.get('/notifications/unread-count'),
   markAsRead: (id) => request.put('/notifications/' + id + '/read'),
   markAllRead: () => request.put('/notifications/read-all'),
+  getBadges() {
+    return request.get('/users/badges')
+  },
 }

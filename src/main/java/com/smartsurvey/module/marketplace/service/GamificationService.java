@@ -5,49 +5,51 @@ import com.smartsurvey.common.exception.ErrorCode;
 import com.smartsurvey.module.marketplace.dto.LeaderboardResponse;
 import com.smartsurvey.module.user.entity.User;
 import com.smartsurvey.module.user.mapper.UserMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GamificationService {
-    private final Map<String, Map<Long, Double>> leaderboards = new ConcurrentHashMap<>();
-    private final Map<String, BitSet> checkinData = new ConcurrentHashMap<>();
+    private final JdbcTemplate jdbcTemplate;
     private final UserMapper userMapper;
 
-    public GamificationService(UserMapper userMapper) {
+    public GamificationService(JdbcTemplate jdbcTemplate, UserMapper userMapper) {
+        this.jdbcTemplate = jdbcTemplate;
         this.userMapper = userMapper;
     }
 
-    public void updateLeaderboard(Long userId, BigDecimal reward) {
-        String dailyKey = "daily:" + LocalDate.now();
-        leaderboards.computeIfAbsent(dailyKey, k -> new ConcurrentHashMap<>())
-            .merge(userId, reward.doubleValue(), Double::sum);
-    }
-
     public LeaderboardResponse getLeaderboard(String period) {
-        String key = period + ":" + LocalDate.now();
-        Map<Long, Double> scores = leaderboards.getOrDefault(key, Collections.emptyMap());
+        String startDate;
+        LocalDate today = LocalDate.now();
+        if ("daily".equals(period)) {
+            startDate = today.toString();
+        } else if ("weekly".equals(period)) {
+            startDate = today.minusDays(7).toString();
+        } else {
+            startDate = today.minusDays(30).toString();
+        }
+
+        String sql = "SELECT user_id, SUM(amount) as earnings FROM transactions " +
+            "WHERE type = 'reward' AND status = 'success' AND created_at >= ? " +
+            "GROUP BY user_id ORDER BY earnings DESC LIMIT 10";
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, startDate + " 00:00:00");
 
         LeaderboardResponse resp = new LeaderboardResponse();
         resp.setPeriod(period);
         List<LeaderboardResponse.Entry> list = new ArrayList<>();
-        List<Map.Entry<Long, Double>> sorted = new ArrayList<>(scores.entrySet());
-        sorted.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
-
         int rank = 1;
-        for (Map.Entry<Long, Double> e : sorted) {
-            if (rank > 10) break;
-            Long uid = e.getKey();
-            User user = userMapper.selectById(uid);
+        for (Map<String, Object> row : rows) {
+            Long userId = ((Number) row.get("user_id")).longValue();
+            BigDecimal earnings = new BigDecimal(row.get("earnings").toString());
+            User user = userMapper.selectById(userId);
             LeaderboardResponse.Entry entry = new LeaderboardResponse.Entry();
-            entry.setUserId(uid);
+            entry.setUserId(userId);
             entry.setRank(rank++);
-            entry.setEarnings(BigDecimal.valueOf(e.getValue()));
+            entry.setEarnings(earnings);
             entry.setUsername(user != null ? user.getUsername() : "未知用户");
             list.add(entry);
         }
@@ -56,20 +58,29 @@ public class GamificationService {
     }
 
     public String checkIn(Long userId) {
-        String key = YearMonth.now().toString();
-        BitSet bits = checkinData.computeIfAbsent(key, k -> new BitSet(31));
-        int dayOfMonth = (int) LocalDate.now().getDayOfMonth() - 1;
+        LocalDate today = LocalDate.now();
 
-        if (bits.get(dayOfMonth)) {
+        // Check if already signed in today
+        Integer count = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM sign_in_records WHERE user_id = ? AND sign_date = ?",
+            Integer.class, userId, today.toString());
+        if (count != null && count > 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST.getCode(), "今日已签到");
         }
-        bits.set(dayOfMonth);
 
-        int streak = 0;
-        for (int i = dayOfMonth; i >= 0; i--) {
-            if (bits.get(i)) streak++; else break;
-        }
+        // Calculate streak from previous day
+        LocalDate yesterday = today.minusDays(1);
+        Integer prevStreak = jdbcTemplate.queryForObject(
+            "SELECT streak_days FROM sign_in_records WHERE user_id = ? AND sign_date = ?",
+            Integer.class, userId, yesterday.toString());
+        int streak = (prevStreak != null ? prevStreak : 0) + 1;
+
         int points = streak >= 7 ? 20 : 5;
+
+        jdbcTemplate.update(
+            "INSERT INTO sign_in_records (user_id, sign_date, streak_days, points_earned) VALUES (?, ?, ?, ?)",
+            userId, today.toString(), streak, points);
+
         return "签到成功，连续" + streak + "天，获得" + points + "积分";
     }
 }

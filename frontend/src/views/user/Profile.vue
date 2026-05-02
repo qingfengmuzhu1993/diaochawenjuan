@@ -27,6 +27,18 @@
       <el-input v-model="editBio" placeholder="编辑个人简介" maxlength="200" />
       <el-button type="primary" size="small" @click="handleUpdate" style="margin-top:8px">保存</el-button>
     </div>
+    <div class="badge-section" v-if="badges.length > 0">
+      <h3>勋章墙</h3>
+      <div class="badge-grid">
+        <div v-for="b in badges" :key="b.name" class="badge-item">
+          <span class="badge-icon">{{ badgeIcon(b.icon) }}</span>
+          <div>
+            <div class="badge-name">{{ b.name }}</div>
+            <div class="badge-desc">{{ b.description }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -45,7 +57,17 @@ const following = ref([])
 const isFollowed = ref(false)
 const editBio = ref('')
 const loading = ref(false)
+const badges = ref([])
 const isSelf = computed(() => !route.params.id || route.params.id == auth.user?.id)
+
+async function fetchBadges() {
+  try { badges.value = await userApi.getBadges() } catch {}
+}
+
+function badgeIcon(icon) {
+  const map = { medal: '🏅', star: '⭐', bolt: '⚡', calendar: '📅', coin: '💰', rocket: '🚀' }
+  return map[icon] || '🏆'
+}
 
 onMounted(async () => {
   loading.value = true
@@ -56,6 +78,7 @@ onMounted(async () => {
     followers.value = await userApi.getFollowers(uid)
     following.value = await userApi.getFollowing(uid)
     if (!isSelf.value) isFollowed.value = await userApi.isFollowing(uid)
+    await fetchBadges()
   } catch {} finally { loading.value = false }
 })
 
@@ -104,4 +127,12 @@ async function handleUpdate() {
   display: flex;
   gap: 8px;
 }
+
+.badge-section { margin-top: 28px; }
+.badge-section h3 { color: #134E4A; font-size: 16px; margin-bottom: 12px; }
+.badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.badge-item { display: flex; align-items: center; gap: 10px; padding: 12px; background: #F5FAF8; border-radius: 10px; border: 1px solid #E8F5EF; }
+.badge-icon { font-size: 24px; flex-shrink: 0; }
+.badge-name { font-size: 13px; font-weight: 600; color: #134E4A; }
+.badge-desc { font-size: 11px; color: #87A697; margin-top: 2px; }
 </style>

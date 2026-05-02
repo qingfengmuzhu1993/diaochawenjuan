@@ -11,4 +11,7 @@ import java.util.List;
 public interface AnswerMapper extends BaseMapper<Answer> {
     @Select("SELECT * FROM answers WHERE response_id = #{responseId}")
     List<Answer> selectByResponseId(@Param("responseId") Long responseId);
+
+    @Select("SELECT * FROM answers WHERE question_id = #{questionId}")
+    List<Answer> selectByQuestionId(@Param("questionId") Long questionId);
 }

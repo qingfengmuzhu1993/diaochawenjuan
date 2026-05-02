@@ -27,4 +27,7 @@ export const userApi = {
   exchangePoints(type) {
     return request.post('/points/exchange', { type })
   },
+  getPointsHistory() {
+    return request.get('/points/history')
+  },
 }

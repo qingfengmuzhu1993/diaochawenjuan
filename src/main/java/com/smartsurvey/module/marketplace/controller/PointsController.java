@@ -85,4 +85,18 @@ public class PointsController {
         result.put("remaining", String.valueOf(balance - cost));
         return ApiResponse.ok(result);
     }
+
+    @GetMapping("/history")
+    public ApiResponse<List<Map<String, Object>>> history(@CurrentUser Long userId) {
+        String sql = "SELECT sign_date AS created_at, " +
+            "CONCAT('连续签到', streak_days, '天') AS reason, " +
+            "points_earned AS amount, 'earn' AS type " +
+            "FROM sign_in_records WHERE user_id = ? " +
+            "UNION ALL " +
+            "SELECT created_at, reward AS reason, -points_spent AS amount, 'spend' AS type " +
+            "FROM points_usage WHERE user_id = ? " +
+            "ORDER BY created_at DESC LIMIT 50";
+        List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, userId, userId);
+        return ApiResponse.ok(list);
+    }
 }

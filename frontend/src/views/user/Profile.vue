@@ -44,6 +44,20 @@
       </el-col>
     </el-row>
 
+    <!-- points history dialog -->
+    <el-dialog v-model="pointsHistoryVisible" title="积分明细" width="500px" destroy-on-close>
+      <div v-if="pointsHistory.length === 0" style="text-align:center;color:#999;padding:20px">暂无积分记录</div>
+      <div v-for="(item, idx) in pointsHistory" :key="idx" class="points-record">
+        <div class="points-record-left">
+          <span class="points-record-reason">{{ item.reason }}</span>
+          <span class="points-record-time">{{ formatDateTime(item.createdAt || item.created_at) }}</span>
+        </div>
+        <span :class="item.type === 'earn' ? 'points-earn' : 'points-spend'">
+          {{ item.type === 'earn' ? '+' : '' }}{{ item.amount }}
+        </span>
+      </div>
+    </el-dialog>
+
     <!-- followers/following dialog -->
     <el-dialog v-model="followDialogVisible" :title="followDialogTitle" width="420px" destroy-on-close>
       <div v-if="followDialogList.length === 0" style="text-align:center;color:#999;padding:20px">暂无数据</div>
@@ -82,8 +96,11 @@
     <div v-if="isSelf" class="points-section">
       <h3>积分中心</h3>
       <div class="points-balance">
-        <span class="points-num">{{ pointsBalance }}</span>
-        <span class="points-label">当前积分</span>
+        <div>
+          <span class="points-num">{{ pointsBalance }}</span>
+          <span class="points-label">当前积分</span>
+        </div>
+        <el-button link type="primary" size="small" @click="openPointsHistory">积分明细</el-button>
       </div>
       <div class="exchange-options">
         <div class="exchange-card">
@@ -130,6 +147,8 @@ const loading = ref(false)
 const badges = ref([])
 const pointsBalance = ref(0)
 const exchanging = ref(false)
+const pointsHistoryVisible = ref(false)
+const pointsHistory = ref([])
 const followDialogVisible = ref(false)
 const followDialogType = ref('followers')
 const followDialogList = ref([])
@@ -214,6 +233,18 @@ function openBioDialog() {
   editBio.value = profile.value.bio || ''
   bioDialogVisible.value = true
 }
+async function openPointsHistory() {
+  try {
+    pointsHistory.value = await userApi.getPointsHistory()
+    pointsHistoryVisible.value = true
+  } catch {}
+}
+
+function formatDateTime(dt) {
+  if (!dt) return ''
+  return dt.substring(0, 16).replace('T', ' ')
+}
+
 async function handleUpdate() {
   try {
     await userApi.updateProfile({ bio: editBio.value })
@@ -280,7 +311,14 @@ async function handleUpdate() {
 .badge-desc { font-size: 11px; color: #87A697; margin-top: 2px; }
 .points-section { margin-top: 28px; }
 .points-section h3 { color: #134E4A; font-size: 16px; margin-bottom: 12px; }
-.points-balance { display: flex; align-items: baseline; gap: 8px; margin-bottom: 16px; padding: 16px; background: linear-gradient(135deg, #0D9488, #134E4A); border-radius: 12px; }
+.points-balance { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 16px; background: linear-gradient(135deg, #0D9488, #134E4A); border-radius: 12px; }
+.points-record { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #E8F5EF; }
+.points-record:last-child { border-bottom: none; }
+.points-record-left { display: flex; flex-direction: column; gap: 2px; }
+.points-record-reason { font-size: 14px; color: #134E4A; }
+.points-record-time { font-size: 12px; color: #AAA; }
+.points-earn { font-size: 15px; font-weight: 700; color: #0D9488; }
+.points-spend { font-size: 15px; font-weight: 700; color: #F56C6C; }
 .points-num { font-size: 32px; font-weight: 700; color: #fff; }
 .points-label { font-size: 14px; color: rgba(255,255,255,0.8); }
 .exchange-options { display: flex; gap: 12px; }

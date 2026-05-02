@@ -54,7 +54,7 @@
     </div>
 
     <div class="card-grid" style="margin-top:20px">
-      <div v-for="item in list" :key="item.id" class="survey-card">
+      <div v-for="item in list" :key="item.id" class="survey-card" @click="router.push('/marketplace/' + item.id)">
         <div class="card-header">
           <h4>{{ item.title }}</h4>
           <el-tag type="warning" size="small" effect="plain" round>¥{{ item.rewardPerResponse || 0 }}/份</el-tag>
@@ -69,7 +69,7 @@
             <el-avatar :size="24" />
             <span>@{{ item.creatorName || '匿名用户' }}</span>
           </div>
-          <el-button type="primary" size="small" round @click="handleClaim(item)">立即回答</el-button>
+          <el-button type="primary" size="small" round @click.stop="handleClaim(item)">立即回答</el-button>
         </div>
       </div>
     </div>
@@ -163,7 +163,7 @@ function resetFilters() {
 async function handleClaim(item) {
   try {
     const res = await marketplaceApi.claim(item.id)
-    router.push('/marketplace/' + item.id + '?responseId=' + res.responseId)
+    router.push('/marketplace/' + item.id + '/answer?responseId=' + res.responseId)
   } catch {}
 }
 

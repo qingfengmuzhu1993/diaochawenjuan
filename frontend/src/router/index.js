@@ -7,7 +7,8 @@ const routes = [
     redirect: '/marketplace',
     children: [
       { path: 'marketplace', name: 'Marketplace', component: () => import('@/views/marketplace/Index.vue') },
-      { path: 'marketplace/:id', name: 'SurveyAnswer', component: () => import('@/views/marketplace/Answer.vue') },
+      { path: 'marketplace/:id', name: 'MarketplaceDetail', component: () => import('@/views/marketplace/Detail.vue') },
+      { path: 'marketplace/:id/answer', name: 'SurveyAnswer', component: () => import('@/views/marketplace/Answer.vue') },
       { path: 'surveys', name: 'MySurveys', component: () => import('@/views/survey/MySurveys.vue') },
       { path: 'surveys/create', name: 'SurveyCreate', component: () => import('@/views/survey/Create.vue') },
       { path: 'surveys/:id/edit', name: 'SurveyEdit', component: () => import('@/views/survey/Edit.vue') },

@@ -22,6 +22,37 @@
       >{{ opt.label }}</button>
     </div>
 
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
+      <el-input v-model="keyword" placeholder="搜索问卷标题..." clearable
+        :prefix-icon="Search" @clear="fetchList" @keyup.enter="fetchList"
+        style="max-width:320px" size="default" />
+      <el-button @click="showFilter = !showFilter" round>
+        <el-icon><Filter /></el-icon>筛选
+      </el-button>
+    </div>
+
+    <div v-if="showFilter" class="filter-panel">
+      <div class="filter-row">
+        <span class="filter-label">奖励区间</span>
+        <el-input-number v-model="minReward" :min="0" :step="0.5" size="small" placeholder="最低" controls-position="right" style="width:120px" />
+        <span style="margin:0 8px;color:#999">—</span>
+        <el-input-number v-model="maxReward" :min="0" :step="0.5" size="small" placeholder="最高" controls-position="right" style="width:120px" />
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">最长时长</span>
+        <el-select v-model="maxDuration" placeholder="不限" size="small" clearable style="width:160px">
+          <el-option label="3分钟内" :value="3" />
+          <el-option label="5分钟内" :value="5" />
+          <el-option label="10分钟内" :value="10" />
+          <el-option label="15分钟内" :value="15" />
+        </el-select>
+      </div>
+      <div class="filter-row">
+        <el-button type="primary" size="small" @click="fetchList">应用筛选</el-button>
+        <el-button size="small" @click="resetFilters">重置</el-button>
+      </div>
+    </div>
+
     <div class="card-grid" style="margin-top:20px">
       <div v-for="item in list" :key="item.id" class="survey-card">
         <div class="card-header">
@@ -77,6 +108,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { Search } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { marketplaceApi } from '@/api/marketplace'
 import { ElMessage } from 'element-plus'
@@ -85,6 +117,7 @@ const sortOptions = [
   { label: '推荐', value: 'recommended' },
   { label: '最新', value: 'newest' },
   { label: '高奖励', value: 'highest_reward' },
+  { label: '即将截止', value: 'ending_soon' },
 ]
 const periods = [
   { label: '日榜', value: 'daily' },
@@ -97,6 +130,11 @@ const list = ref([])
 const sort = ref('recommended')
 const page = ref(1)
 const total = ref(0)
+const keyword = ref('')
+const showFilter = ref(false)
+const minReward = ref(null)
+const maxReward = ref(null)
+const maxDuration = ref(null)
 const showLeaderboard = ref(false)
 const boardPeriod = ref('daily')
 const leaderboard = ref([])
@@ -105,9 +143,21 @@ onMounted(() => fetchList())
 
 async function fetchList() {
   try {
-    const res = await marketplaceApi.listSurveys({ sort: sort.value, page: page.value, size: 20 })
+    const params = { sort: sort.value, page: page.value, size: 20 }
+    if (keyword.value) params.keyword = keyword.value
+    if (minReward.value != null) params.minReward = minReward.value
+    if (maxReward.value != null) params.maxReward = maxReward.value
+    if (maxDuration.value != null) params.maxDuration = maxDuration.value
+    const res = await marketplaceApi.listSurveys(params)
     list.value = res.list; total.value = res.total
   } catch {}
+}
+
+function resetFilters() {
+  keyword.value = ''
+  minReward.value = null; maxReward.value = null; maxDuration.value = null
+  showFilter.value = false
+  fetchList()
 }
 
 async function handleClaim(item) {
@@ -291,4 +341,9 @@ async function fetchLeaderboard() {
   font-weight: 700;
   color: #F59E0B;
 }
+
+.filter-panel { background: #F5FAF8; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.filter-row:last-child { margin-bottom: 0; }
+.filter-label { width: 70px; font-size: 13px; color: #5F8B7A; font-weight: 500; flex-shrink: 0; }
 </style>

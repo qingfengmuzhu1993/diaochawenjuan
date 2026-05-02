@@ -6,6 +6,7 @@ public class MarketplaceQuery {
     private Double minReward;
     private Double maxReward;
     private Integer maxDuration;
+    private String keyword;
     private int page = 1;
     private int size = 20;
 
@@ -19,6 +20,8 @@ public class MarketplaceQuery {
     public void setMaxReward(Double maxReward) { this.maxReward = maxReward; }
     public Integer getMaxDuration() { return maxDuration; }
     public void setMaxDuration(Integer maxDuration) { this.maxDuration = maxDuration; }
+    public String getKeyword() { return keyword; }
+    public void setKeyword(String keyword) { this.keyword = keyword; }
     public int getPage() { return page; }
     public void setPage(int page) { this.page = page; }
     public int getSize() { return size; }

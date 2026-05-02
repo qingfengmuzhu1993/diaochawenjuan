@@ -16,6 +16,7 @@ import com.smartsurvey.module.user.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,12 +43,35 @@ public class MarketplaceService {
                .eq(Survey::getAuditStatus, "approved")
                .gt(Survey::getRemainingQuota, 0);
 
+        // keyword search
+        if (query.getKeyword() != null && !query.getKeyword().trim().isEmpty()) {
+            wrapper.like(Survey::getTitle, query.getKeyword());
+        }
+
+        // reward range filter
+        if (query.getMinReward() != null) {
+            wrapper.ge(Survey::getRewardPerResponse, BigDecimal.valueOf(query.getMinReward()));
+        }
+        if (query.getMaxReward() != null) {
+            wrapper.le(Survey::getRewardPerResponse, BigDecimal.valueOf(query.getMaxReward()));
+        }
+
+        // duration filter: time_limit_minutes=0 means unlimited
+        if (query.getMaxDuration() != null) {
+            wrapper.and(w -> w.eq(Survey::getTimeLimitMinutes, 0)
+                .or().le(Survey::getTimeLimitMinutes, query.getMaxDuration()));
+        }
+
+        // sort
         if ("newest".equals(query.getSort())) {
             wrapper.orderByDesc(Survey::getCreatedAt);
         } else if ("highest_reward".equals(query.getSort())) {
             wrapper.orderByDesc(Survey::getRewardPerResponse);
+        } else if ("ending_soon".equals(query.getSort())) {
+            wrapper.isNotNull(Survey::getEndTime).orderByAsc(Survey::getEndTime);
         } else {
-            wrapper.orderByDesc(Survey::getRewardPerResponse); // default = recommended
+            // default = recommended = highest_reward
+            wrapper.orderByDesc(Survey::getRewardPerResponse);
         }
 
         Page<Survey> result = surveyMapper.selectPage(page, wrapper);

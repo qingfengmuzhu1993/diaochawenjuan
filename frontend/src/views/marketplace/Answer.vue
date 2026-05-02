@@ -34,6 +34,50 @@
         <div v-else-if="currentQuestion.type==='essay'">
           <el-input v-model="currentAnswer.text" type="textarea" :rows="3" placeholder="请输入您的回答" maxlength="2000" show-word-limit />
         </div>
+        <div v-else-if="currentQuestion.type==='fill'">
+          <el-input v-model="currentAnswer.text" :placeholder="getFillPlaceholder()" maxlength="200" />
+          <span style="font-size:12px;color:#999;margin-top:4px;display:inline-block">{{ getFillHint() }}</span>
+        </div>
+        <div v-else-if="currentQuestion.type==='matrix'">
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th v-for="col in matrixCols" :key="col.id">{{ col.text }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in matrixRows" :key="row.id">
+                <td class="matrix-row-label">{{ row.text }}</td>
+                <td v-for="col in matrixCols" :key="col.id" class="matrix-cell">
+                  <el-radio
+                    v-model="matrixAnswers[row.id]"
+                    :label="col.id"
+                    @change="onMatrixChange"
+                  >&nbsp;</el-radio>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else-if="currentQuestion.type==='ranking'">
+          <p style="font-size:13px;color:#666;margin-bottom:8px">拖拽选项排序（从上到下表示优先级从高到低）</p>
+          <div class="ranking-list">
+            <div
+              v-for="(opt, idx) in rankingItems"
+              :key="opt.id"
+              class="ranking-item"
+              draggable="true"
+              @dragstart="onRankDragStart(idx)"
+              @dragover.prevent
+              @drop="onRankDrop(idx)"
+            >
+              <span class="ranking-num">{{ idx + 1 }}</span>
+              <span>{{ opt.text }}</span>
+              <el-icon style="margin-left:auto;color:#87A697"><Rank /></el-icon>
+            </div>
+          </div>
+        </div>
         <div v-else>
           <el-input v-model="currentAnswer.text" placeholder="请输入" maxlength="200" />
         </div>
@@ -54,6 +98,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { responseApi } from '@/api/response'
 import { surveyApi } from '@/api/survey'
 import { ElMessage } from 'element-plus'
+import { Rank } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -65,6 +110,9 @@ const answers = ref({})
 const currentAnswer = ref({ optionIds: [], text: '', rating: 0 })
 const submitting = ref(false)
 const timedOut = ref(false)
+const matrixAnswers = ref({})
+const rankingItems = ref([])
+let rankDragIdx = -1
 
 const currentQuestion = computed(() => questions.value[currentIndex.value])
 const totalQuestions = computed(() => questions.value.length)
@@ -72,6 +120,22 @@ const progress = computed(() => Math.round((currentIndex.value / Math.max(totalQ
 const qOptions = computed(() => {
   if (!currentQuestion.value?.options) return []
   try { return typeof currentQuestion.value.options === 'string' ? JSON.parse(currentQuestion.value.options) : currentQuestion.value.options } catch { return [] }
+})
+const matrixRows = computed(() => {
+  if (!currentQuestion.value?.settings) return []
+  try {
+    const settings = typeof currentQuestion.value.settings === 'string'
+      ? JSON.parse(currentQuestion.value.settings) : currentQuestion.value.settings
+    return settings.rows || []
+  } catch { return [] }
+})
+const matrixCols = computed(() => {
+  if (!currentQuestion.value?.settings) return []
+  try {
+    const settings = typeof currentQuestion.value.settings === 'string'
+      ? JSON.parse(currentQuestion.value.settings) : currentQuestion.value.settings
+    return settings.cols || []
+  } catch { return [] }
 })
 
 onMounted(async () => {
@@ -85,11 +149,27 @@ onMounted(async () => {
 function saveCurrentAnswer() {
   const q = currentQuestion.value
   if (!q) return
-  answers.value[q.id] = {
-    questionId: q.id,
-    answerText: currentAnswer.value.text || null,
-    answerOptions: currentAnswer.value.optionIds?.length ? currentAnswer.value.optionIds : null,
-    answerRating: currentAnswer.value.rating || null,
+  if (q.type === 'matrix') {
+    answers.value[q.id] = {
+      questionId: q.id,
+      answerText: null,
+      answerOptions: Object.entries(matrixAnswers.value).map(([rowId, colId]) => ({ row: Number(rowId), col: colId })),
+      answerRating: null,
+    }
+  } else if (q.type === 'ranking') {
+    answers.value[q.id] = {
+      questionId: q.id,
+      answerText: null,
+      answerOptions: rankingItems.value.map(o => o.id),
+      answerRating: null,
+    }
+  } else {
+    answers.value[q.id] = {
+      questionId: q.id,
+      answerText: currentAnswer.value.text || null,
+      answerOptions: currentAnswer.value.optionIds?.length ? [...currentAnswer.value.optionIds] : null,
+      answerRating: currentAnswer.value.rating || null,
+    }
   }
 }
 
@@ -97,12 +177,60 @@ function loadCurrentAnswer() {
   const q = currentQuestion.value
   if (!q) return
   const saved = answers.value[q.id]
-  currentAnswer.value = {
-    optionIds: saved?.answerOptions || [],
-    text: saved?.answerText || '',
-    rating: saved?.answerRating || 0,
+  if (q.type === 'matrix') {
+    matrixAnswers.value = {}
+    if (saved?.answerOptions) {
+      const opts = typeof saved.answerOptions === 'string' ? JSON.parse(saved.answerOptions) : saved.answerOptions
+      if (Array.isArray(opts)) {
+        opts.forEach(o => { matrixAnswers.value[o.row] = o.col })
+      }
+    }
+    currentAnswer.value = { optionIds: [], text: '', rating: 0 }
+  } else if (q.type === 'ranking') {
+    if (saved?.answerOptions?.length) {
+      const optIds = saved.answerOptions
+      rankingItems.value = [...qOptions.value].sort((a, b) => {
+        const ai = optIds.indexOf(a.id), bi = optIds.indexOf(b.id)
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+      })
+    } else {
+      rankingItems.value = [...qOptions.value]
+    }
+    currentAnswer.value = { optionIds: [], text: '', rating: 0 }
+  } else {
+    matrixAnswers.value = {}
+    rankingItems.value = []
+    currentAnswer.value = {
+      optionIds: saved?.answerOptions ? [...saved.answerOptions] : [],
+      text: saved?.answerText || '',
+      rating: saved?.answerRating || 0,
+    }
   }
 }
+
+function getFillPlaceholder() {
+  const q = currentQuestion.value
+  if (!q?.settings) return '请输入'
+  try {
+    const s = typeof q.settings === 'string' ? JSON.parse(q.settings) : q.settings
+    return s.placeholder || '请输入'
+  } catch { return '请输入' }
+}
+function getFillHint() {
+  const q = currentQuestion.value
+  if (!q?.settings) return ''
+  try {
+    const s = typeof q.settings === 'string' ? JSON.parse(q.settings) : q.settings
+    return s.hint || ''
+  } catch { return '' }
+}
+function onRankDragStart(idx) { rankDragIdx = idx }
+function onRankDrop(idx) {
+  if (rankDragIdx === idx) return
+  const item = rankingItems.value.splice(rankDragIdx, 1)[0]
+  rankingItems.value.splice(idx, 0, item)
+}
+function onMatrixChange() { /* reactivity trigger for save */ }
 
 function nextQuestion() {
   saveCurrentAnswer()
@@ -134,4 +262,14 @@ async function handleSubmit() {
 .answer-page { max-width: 700px; margin: 0 auto; }
 .desc { color: #666; }
 .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
+.matrix-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.matrix-table th, .matrix-table td { padding: 8px 12px; border: 1px solid #E8F5EF; text-align: center; font-size: 13px; }
+.matrix-table th { background: #F5FAF8; color: #134E4A; font-weight: 600; }
+.matrix-row-label { text-align: left !important; font-weight: 500; color: #134E4A; }
+.matrix-cell { width: 60px; }
+.ranking-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.ranking-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #F5FAF8; border: 1px solid #CCE4D6; border-radius: 8px; cursor: grab; transition: all 0.15s; user-select: none; }
+.ranking-item:hover { background: #E8F5EF; }
+.ranking-item:active { cursor: grabbing; }
+.ranking-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #0D9488; color: #fff; font-size: 12px; font-weight: 600; flex-shrink: 0; }
 </style>

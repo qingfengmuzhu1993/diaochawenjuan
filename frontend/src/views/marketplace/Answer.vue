@@ -150,7 +150,8 @@ const timedOut = ref(false)
 const timeLeft = ref(0)
 let timerInterval = null
 const conversationalMode = ref(false)
-let questionStartTime = 0
+let questionStartTime = Date.now()
+const behaviorLog = ref({})
 const matrixAnswers = ref({})
 const rankingItems = ref([])
 let rankDragIdx = -1
@@ -209,10 +210,25 @@ onMounted(async () => {
       }, 1000)
     }
   } catch {} finally { loading.value = false }
+  window.addEventListener('blur', () => {
+    const q = currentQuestion.value
+    if (q && behaviorLog.value[q]) {
+      behaviorLog.value[q].lostFocusCount++
+    }
+  })
   questionStartTime = Date.now()
 })
 
 function saveCurrentAnswer() {
+  if (currentQuestion.value) {
+    const qId = currentQuestion.value.id
+    behaviorLog.value[qId] = {
+      durationSeconds: Math.round((Date.now() - questionStartTime) / 1000),
+      changeCount: (behaviorLog.value[qId]?.changeCount || 0) + 1,
+      lostFocusCount: behaviorLog.value[qId]?.lostFocusCount || 0
+    }
+    questionStartTime = Date.now()
+  }
   const q = currentQuestion.value
   if (!q) return
   if (q.type === 'matrix') {
@@ -277,6 +293,7 @@ function loadCurrentAnswer() {
       rating: saved?.answerRating || 0,
     }
   }
+  questionStartTime = Date.now()
 }
 
 function getFillPlaceholder() {
@@ -332,7 +349,7 @@ async function handleSubmit() {
       respId = startRes.responseId
     }
     const ansList = Object.values(answers.value)
-    await responseApi.submitAnswers(respId, { answers: ansList })
+    await responseApi.submitAnswers(respId, { answers: ansList, behaviorData: JSON.stringify(behaviorLog.value) })
     await responseApi.submit(respId)
     submitted.value = true
     localStorage.removeItem('answer_draft_' + route.params.id)

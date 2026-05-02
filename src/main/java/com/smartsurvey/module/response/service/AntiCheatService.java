@@ -1,5 +1,7 @@
 package com.smartsurvey.module.response.service;
 
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.smartsurvey.module.response.entity.Answer;
 import com.smartsurvey.module.response.entity.Response;
 import com.smartsurvey.module.response.mapper.AnswerMapper;
@@ -9,6 +11,7 @@ import com.smartsurvey.module.survey.mapper.QuestionMapper;
 import com.smartsurvey.module.survey.mapper.SurveyMapper;
 import com.smartsurvey.module.survey.service.SurveyLogicService;
 import com.smartsurvey.module.survey.service.SurveyService;
+import com.smartsurvey.module.user.mapper.UserMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -30,11 +33,13 @@ public class AntiCheatService {
     private final SurveyService surveyService;
     private final ResponseService responseService;
     private final RewardService rewardService;
+    private final UserMapper userMapper;
 
     public AntiCheatService(ResponseMapper responseMapper, AnswerMapper answerMapper,
                              QuestionMapper questionMapper, SurveyMapper surveyMapper,
                              SurveyLogicService surveyLogicService, SurveyService surveyService,
-                             @Lazy ResponseService responseService, RewardService rewardService) {
+                             @Lazy ResponseService responseService, RewardService rewardService,
+                             UserMapper userMapper) {
         this.responseMapper = responseMapper;
         this.answerMapper = answerMapper;
         this.questionMapper = questionMapper;
@@ -43,48 +48,63 @@ public class AntiCheatService {
         this.surveyService = surveyService;
         this.responseService = responseService;
         this.rewardService = rewardService;
+        this.userMapper = userMapper;
     }
 
-    @Async
-    @Transactional
     public void evaluateAsync(Response response) {
-        int riskScore = 0;
-        StringBuilder reason = new StringBuilder();
-        List<Question> questions = questionMapper.selectBySurveyId(response.getSurveyId());
-        int minExpectedSeconds = surveyLogicService.estimateDuration(questions) / 3;
-
-        // Check 1: Duration anomaly
-        if (response.getDurationSeconds() != null && minExpectedSeconds > 0
-                && response.getDurationSeconds() < minExpectedSeconds) {
-            riskScore += 30;
-            reason.append("完成时间异常短(").append(response.getDurationSeconds()).append("s); ");
-        }
-
-        // Check 2: Pattern answers
-        List<Answer> answers = answerMapper.selectByResponseId(response.getId());
-        if (isPatternAnswer(answers)) {
-            riskScore += 40;
-            reason.append("检测到规律性选择; ");
-        }
-
-        // Check 3: Multi-account on same device
-        if (response.getDeviceFingerprint() != null) {
-            int accountsOnDevice = responseMapper.countAccountsByFingerprint(
-                    response.getDeviceFingerprint(), response.getSurveyId());
-            if (accountsOnDevice > 2) {
-                riskScore += 25;
-                reason.append("同设备多账号回答; ");
+        new Thread(() -> {
+            try {
+                int score = evaluate(response);
+                response.setQualityScore(BigDecimal.valueOf(score));
+                if (score < 3) {
+                    response.setStatus("rejected");
+                    response.setReviewNote("AI检测到异常答题行为（评分过低）");
+                    userMapper.updateReputation(response.getUserId(), -5);
+                } else if (score < 6) {
+                    response.setReviewType("manual");
+                    response.setReviewNote("质量评分偏低，需人工审核");
+                } else {
+                    response.setStatus("approved");
+                    response.setReviewNote("AI审核通过（评分：" + score + "）");
+                    rewardService.grantReward(response);
+                    if (response.getReferrerId() != null && response.getRewardAmount() != null
+                            && response.getRewardAmount().compareTo(BigDecimal.ZERO) > 0) {
+                        rewardService.grantViralBonus(response.getReferrerId(),
+                            response.getRewardAmount(), response.getId());
+                    }
+                }
+                responseMapper.updateById(response);
+            } catch (Exception e) {
+                log.error("Auto evaluation failed for response {}", response.getId(), e);
             }
-        }
+        }).start();
+    }
 
-        // Decision
-        if (riskScore >= 60) {
-            reject(response.getId(), reason.toString());
-        } else if (riskScore >= 30) {
-            markForManualReview(response.getId(), reason.toString());
-        } else {
-            approve(response.getId());
-        }
+    private int evaluate(Response response) {
+        String behaviorData = response.getBehaviorData();
+        if (behaviorData == null || behaviorData.isEmpty()) return 5;
+
+        int deductions = 0;
+        try {
+            JSONObject data = JSONUtil.parseObj(behaviorData);
+            for (String key : data.keySet()) {
+                JSONObject qData = data.getJSONObject(key);
+                int duration = qData.getInt("durationSeconds", 999);
+                if (duration < 2) deductions += 2;
+                else if (duration < 5) deductions += 1;
+                int focusLoss = qData.getInt("lostFocusCount", 0);
+                if (focusLoss > 5) deductions += 1;
+            }
+            // Check total time too short
+            int totalDuration = 0;
+            for (String key : data.keySet()) {
+                totalDuration += data.getJSONObject(key).getInt("durationSeconds", 0);
+            }
+            if (totalDuration < 10) deductions += 3;
+            else if (totalDuration < 30) deductions += 1;
+        } catch (Exception ignored) {}
+
+        return Math.max(0, 10 - deductions);
     }
 
     private boolean isPatternAnswer(List<Answer> answers) {

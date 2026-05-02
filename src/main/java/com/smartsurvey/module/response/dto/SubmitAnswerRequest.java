@@ -4,9 +4,12 @@ import java.util.List;
 
 public class SubmitAnswerRequest {
     private List<AnswerItem> answers;
+    private String behaviorData;
 
     public List<AnswerItem> getAnswers() { return answers; }
     public void setAnswers(List<AnswerItem> answers) { this.answers = answers; }
+    public String getBehaviorData() { return behaviorData; }
+    public void setBehaviorData(String behaviorData) { this.behaviorData = behaviorData; }
 
     public static class AnswerItem {
         private Long questionId;

@@ -136,6 +136,11 @@ public class ResponseService {
                 answerMapper.updateById(answer);
             }
         }
+
+        if (req.getBehaviorData() != null) {
+            response.setBehaviorData(req.getBehaviorData());
+            responseMapper.updateById(response);
+        }
     }
 
     @Transactional

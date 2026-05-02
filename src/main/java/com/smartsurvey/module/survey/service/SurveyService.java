@@ -142,6 +142,57 @@ public class SurveyService {
     }
 
     @Transactional
+    public SurveyDetailResponse duplicate(Long userId, Long surveyId) {
+        Survey original = surveyMapper.selectById(surveyId);
+        if (original == null) throw new BusinessException(ErrorCode.SURVEY_NOT_FOUND);
+
+        Survey copy = new Survey();
+        copy.setUserId(userId);
+        copy.setTitle((original.getTitle() != null ? original.getTitle() : "问卷") + " - 副本");
+        copy.setDescription(original.getDescription());
+        copy.setCoverImage(original.getCoverImage());
+        copy.setStatus("draft");
+        copy.setTotalQuestions(original.getTotalQuestions());
+        copy.setTotalResponses(0);
+        copy.setTargetQuota(original.getTargetQuota());
+        copy.setRemainingQuota(original.getTargetQuota());
+        copy.setRewardType(original.getRewardType());
+        copy.setRewardPerResponse(original.getRewardPerResponse());
+        copy.setIsAnonymous(original.getIsAnonymous());
+        copy.setAllowResume(original.getAllowResume());
+        copy.setTimeLimitMinutes(original.getTimeLimitMinutes());
+        copy.setMaxAttempts(original.getMaxAttempts());
+        copy.setClosingMessage(original.getClosingMessage());
+        copy.setAiGenerated(0);
+        copy.setAuditStatus("pending");
+        copy.setViewCount(0);
+        copy.setShareCount(0);
+        copy.setCreatedAt(LocalDateTime.now());
+        copy.setUpdatedAt(LocalDateTime.now());
+        surveyMapper.insert(copy);
+
+        List<Question> questions = questionMapper.selectBySurveyId(surveyId);
+        if (questions != null) {
+            for (Question q : questions) {
+                Question cq = new Question();
+                cq.setSurveyId(copy.getId());
+                cq.setType(q.getType());
+                cq.setContent(q.getContent());
+                cq.setRequired(q.getRequired());
+                cq.setOrderIndex(q.getOrderIndex());
+                cq.setOptions(q.getOptions());
+                cq.setSettings(q.getSettings());
+                cq.setLogicJump(q.getLogicJump());
+                cq.setLogicShow(q.getLogicShow());
+                cq.setIsRandomOptions(q.getIsRandomOptions());
+                cq.setCreatedAt(LocalDateTime.now());
+                questionMapper.insert(cq);
+            }
+        }
+        return getDetail(copy.getId());
+    }
+
+    @Transactional
     public void publish(Long userId, Long surveyId, PublishRequest req) {
         Survey survey = surveyMapper.selectById(surveyId);
         if (survey == null) throw new BusinessException(ErrorCode.SURVEY_NOT_FOUND);

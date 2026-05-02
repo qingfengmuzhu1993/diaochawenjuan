@@ -70,6 +70,11 @@ public class SurveyController {
         return ApiResponse.ok();
     }
 
+    @PostMapping("/{id}/duplicate")
+    public ApiResponse<SurveyDetailResponse> duplicate(@CurrentUser Long userId, @PathVariable Long id) {
+        return ApiResponse.ok(surveyService.duplicate(userId, id));
+    }
+
     @PostMapping("/{id}/share")
     public ApiResponse<Map<String, String>> share(@CurrentUser Long userId, @PathVariable Long id) {
         String shareCode = toBase62(userId) + "_" + toBase62(id);

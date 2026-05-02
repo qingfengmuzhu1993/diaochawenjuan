@@ -93,6 +93,7 @@
         <div v-else class="report-content">
           <h2 style="color:#134E4A;font-size:20px">{{ reportData.surveyTitle }} — 调研报告</h2>
           <p style="color:#999;font-size:13px">样本量：{{ reportData.sampleSize }} | 生成时间：{{ formatDt(reportData.generatedAt) }}</p>
+          <el-button type="primary" size="small" @click="downloadPdf" style="margin-bottom:12px">下载PDF报告</el-button>
           <el-alert :title="reportData.summary" type="success" :closable="false" style="margin-bottom:16px" />
           <div v-for="(sec, i) in reportData.sections" :key="i" style="margin-bottom:16px;padding:14px;background:#FAFBFC;border-radius:10px;border:1px solid #E8F5EF">
             <h4 style="color:#0D9488;margin:0 0 6px">{{ sec.title }}</h4>
@@ -176,6 +177,10 @@ async function generateReport() {
   try {
     reportData.value = await analyticsApi.generateReport(route.params.id)
   } catch {} finally { reportLoading.value = false }
+}
+
+function downloadPdf() {
+  window.open('/api/v1/analytics/surveys/' + route.params.id + '/report/export')
 }
 </script>
 
